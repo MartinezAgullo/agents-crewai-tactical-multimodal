@@ -2,8 +2,7 @@ import sys
 import warnings
 from crew import TacticalCrew
 
-# Suppress the SyntaxWarning from pysbd, a dependency of CrewAI
-# This warning is harmless and can be ignored
+warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
 def run():
@@ -26,6 +25,10 @@ def run():
     moving slowly along a dirt road, heading towards the factory. They are supported
     by what appears to be a mobile anti-air missile system. No other activity observed.
     """
+
+    inputs = {
+        'mission_report': f"{mission_report}"
+    }
     
     try:
         print("### Starting the Tactical Crew Mission ###")
@@ -34,7 +37,7 @@ def run():
         crew_instance = TacticalCrew()
         
         # Get the crew object and run the mission
-        result = crew_instance.crew().kickoff(inputs={'threat_analysis': {'mission_report': mission_report}})
+        result = crew_instance.crew().kickoff(inputs=inputs)
 
         print("\n### Final Tactical Response ###")
         print(result)

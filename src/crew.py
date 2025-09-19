@@ -8,29 +8,23 @@ from crewai.project import CrewBase, agent, crew, task
 load_dotenv()
 
 # Set up the OpenAI API key from the environment variable
-load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 @CrewBase
 class TacticalCrew:
     """Tactical Response Crew"""
     
-    # Path to the agents and tasks configuration files
-    gents_config = 'tactical/config/agents.yaml'
+    # Use file paths for the @CrewBase decorator to automatically handle loading
+    agents_config = 'tactical/config/agents.yaml'
     tasks_config = 'tactical/config/tasks.yaml'
-
-    def __init__(self):
-        # The __init__ method is where you would handle any custom initialization.
-        # CrewAI's decorators handle most of the configuration automatically.
-        pass
-
+    
     @agent
     def threat_analyst(self) -> Agent:
         """
         Agent to analyze and identify hostile presences from a field report.
         """
         return Agent(
-            config=self.agents_config['Threat Analyst'],
+            config=self.agents_config['threat_analyst'],
             verbose=True
         )
 
@@ -40,7 +34,7 @@ class TacticalCrew:
         Agent to create a professional situation report.
         """
         return Agent(
-            config=self.agents_config['Report Generator'],
+            config=self.agents_config['report_generator'],
             verbose=True
         )
     
@@ -50,21 +44,19 @@ class TacticalCrew:
         Agent to suggest a tactical response based on the situation.
         """
         return Agent(
-            config=self.agents_config['Tactical Advisor'],
+            config=self.agents_config['tactical_advisor'],
             verbose=True
         )
 
     @task
-    def threat_analysis(self, mission_report: str) -> Task:
+    def threat_analysis(self, **kwargs: str) -> Task:
         """
         Task for the Threat Analyst agent to analyze the mission report.
         """
         return Task(
             config=self.tasks_config['threat_analysis'],
             agent=self.threat_analyst(),
-            output_file=self.tasks_config['threat_analysis']['output_file'],
-            context=[],
-            inputs={'input': mission_report}
+            inputs=kwargs
         )
 
     @task
@@ -75,8 +67,8 @@ class TacticalCrew:
         return Task(
             config=self.tasks_config['report_generation'],
             agent=self.report_generator(),
-            output_file=self.tasks_config['report_generation']['output_file'],
-            context=[self.threat_analysis]
+            context=[self.threat_analysis()]
+            
         )
 
     @task
@@ -87,8 +79,7 @@ class TacticalCrew:
         return Task(
             config=self.tasks_config['tactical_response'],
             agent=self.tactical_advisor(),
-            output_file=self.tasks_config['tactical_response']['output_file'],
-            context=[self.report_generation]
+            context=[self.report_generation()]
         )
 
     @crew

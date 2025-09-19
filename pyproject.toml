@@ -6,6 +6,7 @@ authors = [
     { name = "Pablo Martínez Agulló", email = "pablo.martinez.agullo@gmail.com" }
 ]
 license = { text = "MIT" }
+requires-python = ">=3.11"
 dependencies = [
     "crewai",
     "crewai[tools]",
