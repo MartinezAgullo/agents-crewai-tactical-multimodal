@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: agents-crewai-tactical-multimodal
+Version: 0.1.0
+Summary: A multi-agent system for tactical analysis using CrewAI.
+Author-email: Pablo Martínez Agulló <pablo.martinez.agullo@gmail.com>
+License: MIT
+Requires-Dist: crewai
+Requires-Dist: crewai[tools]
+Requires-Dist: openai
+Requires-Dist: python-dotenv

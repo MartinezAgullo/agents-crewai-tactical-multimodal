@@ -1,4 +1,4 @@
-tasks:
+asks:
   threat_analysis:
     description: >
       Analyze the following field report to identify any hostile entities.
@@ -12,6 +12,7 @@ tasks:
       - Threat Type: [e.g., Tank, Infantry Platoon]
       - Estimated Numbers: [e.g., 3 tanks]
       - Location/Activity: [e.g., "moving south on Highway 101"]
+    output_file: output/threat_analysis.md
 
   report_generation:
     description: >
@@ -25,6 +26,7 @@ tasks:
     expected_output: >
       A professionally formatted situation report document, including
       a title, summary, and the detailed threat information.
+    output_file: output/report_generation.md
 
   tactical_response:
     description: >
@@ -37,3 +39,4 @@ tasks:
     expected_output: >
       A detailed tactical response plan, outlining specific actions,
       justifications, and potential outcomes.
+    output_file: output/tactical_response.md

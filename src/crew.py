@@ -1,47 +1,106 @@
 import os
+import yaml
 from dotenv import load_dotenv
-from crewai import Crew, Task
-from crewai.utilities import YamlConfigLoader
+from crewai import Agent, Crew, Process, Task
+from crewai.project import CrewBase, agent, crew, task
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Set up the OpenAI API key from the environment variable
+load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
+@CrewBase
 class TacticalCrew:
+    """Tactical Response Crew"""
+    
+    # Path to the agents and tasks configuration files
+    gents_config = 'tactical/config/agents.yaml'
+    tasks_config = 'tactical/config/tasks.yaml'
+
     def __init__(self):
-        # Load agents and tasks from the YAML configuration files
-        self.config = YamlConfigLoader(config_file='src/tactical/config/agents.yaml').load()
-        self.tasks_config = YamlConfigLoader(config_file='src/tactical/config/tasks.yaml').load()['tasks']
-        
-        self.agents_config = self.config['agents']
+        # The __init__ method is where you would handle any custom initialization.
+        # CrewAI's decorators handle most of the configuration automatically.
+        pass
 
-    def run(self, mission_report):
+    @agent
+    def threat_analyst(self) -> Agent:
         """
-        Creates and runs the Crew with the defined agents and tasks.
+        Agent to analyze and identify hostile presences from a field report.
         """
-        # Create Task objects from the loaded configuration
-        tasks = []
-        for task_name, task_data in self.tasks_config.items():
-            tasks.append(
-                Task(
-                    description=task_data['description'].format(input=mission_report) if 'input' in task_data['description'] else task_data['description'],
-                    agent=task_data['agent'],
-                    expected_output=task_data['expected_output'],
-                    context=[
-                        self.tasks_config[ctx_name] for ctx_name in task_data.get('context', [])
-                    ],
-                )
-            )
-
-        # Create the Crew with the loaded agents and tasks
-        tactical_crew = Crew(
-            agents=self.agents_config,
-            tasks=tasks,
-            verbose=2, # You can change this to 1 or 0 for less verbosity
+        return Agent(
+            config=self.agents_config['Threat Analyst'],
+            verbose=True
         )
 
-        # Kick off the crew's execution with the user's input
-        result = tactical_crew.kickoff()
-        return result
+    @agent
+    def report_generator(self) -> Agent:
+        """
+        Agent to create a professional situation report.
+        """
+        return Agent(
+            config=self.agents_config['Report Generator'],
+            verbose=True
+        )
+    
+    @agent
+    def tactical_advisor(self) -> Agent:
+        """
+        Agent to suggest a tactical response based on the situation.
+        """
+        return Agent(
+            config=self.agents_config['Tactical Advisor'],
+            verbose=True
+        )
+
+    @task
+    def threat_analysis(self, mission_report: str) -> Task:
+        """
+        Task for the Threat Analyst agent to analyze the mission report.
+        """
+        return Task(
+            config=self.tasks_config['threat_analysis'],
+            agent=self.threat_analyst(),
+            output_file=self.tasks_config['threat_analysis']['output_file'],
+            context=[],
+            inputs={'input': mission_report}
+        )
+
+    @task
+    def report_generation(self) -> Task:
+        """
+        Task for the Report Generator agent to create a situation report.
+        """
+        return Task(
+            config=self.tasks_config['report_generation'],
+            agent=self.report_generator(),
+            output_file=self.tasks_config['report_generation']['output_file'],
+            context=[self.threat_analysis]
+        )
+
+    @task
+    def tactical_response(self) -> Task:
+        """
+        Task for the Tactical Advisor agent to suggest a response.
+        """
+        return Task(
+            config=self.tasks_config['tactical_response'],
+            agent=self.tactical_advisor(),
+            output_file=self.tasks_config['tactical_response']['output_file'],
+            context=[self.report_generation]
+        )
+
+    @crew
+    def crew(self) -> Crew:
+        """
+        Creates the Tactical Crew with the defined agents and tasks.
+        """
+        return Crew(
+            agents=self.agents,  # Automatically created by the @agent decorator
+            tasks=self.tasks,   # Automatically created by the @task decorator
+            process=Process.sequential,
+            verbose=True,
+            full_output=True, # Enable saving full outputs
+            output_folder='output' # Specify the output folder
+        )

@@ -1,0 +1,18 @@
+[project]
+name = "agents-crewai-tactical-multimodal"
+version = "0.1.0"
+description = "A multi-agent system for tactical analysis using CrewAI."
+authors = [
+    { name = "Pablo Martínez Agulló", email = "pablo.martinez.agullo@gmail.com" }
+]
+license = { text = "MIT" }
+dependencies = [
+    "crewai",
+    "crewai[tools]",
+    "openai",
+    "python-dotenv",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
