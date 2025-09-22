@@ -6,159 +6,26 @@ from dotenv import load_dotenv
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
+# Import the enhanced LLM manager
+from llm_manager import LLMManager
+
 # Load environment variables from .env file
 load_dotenv()
 
-# Set up the OpenAI API key from the environment variable
+# Set up API keys from environment variables
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "")
 os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY", "")
 os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
+os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY", "")
+os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-class FallbackLLMManager:
-    """Manages LLM fallback logic with connectivity testing"""
-    
-    def __init__(self):
-        self.primary_llm = None
-        self.fallback_llm = None
-        self.tertiary_llm = None
-        self.quaternary_llm = None
-        self._setup_llms()
-    
-    def _test_api_key(self, api_key: str, provider_name: str) -> bool:
-        """Test if API key exists and is not empty"""
-        if not api_key or api_key.strip() == "":
-            logger.warning(f"❌ {provider_name} API key not found or empty")
-            return False
-        logger.info(f"✅ {provider_name} API key found")
-        return True
-    
-    def _setup_llms(self):
-        """Setup LLMs in order of preference with fallback chain"""
-        
-        # Primary LLM (OpenAI GPT-4 Turbo)
-        if self._test_api_key(os.getenv("OPENAI_API_KEY", ""), "OpenAI"):
-            try:
-                self.primary_llm = LLM(
-                    model="gpt-4-turbo",
-                    drop_params=True,
-                    additional_drop_params=["stop"]
-                )
-                logger.info("🚀 Primary LLM: OpenAI GPT-4 Turbo configured")
-            except Exception as e:
-                logger.error(f"Failed to setup OpenAI GPT-4 Turbo: {e}")
-        
-        # Fallback LLM (Anthropic Claude)
-        if self._test_api_key(os.getenv("ANTHROPIC_API_KEY", ""), "Anthropic"):
-            try:
-                self.fallback_llm = LLM(
-                    model="claude-3-sonnet-20240229",
-                    drop_params=True
-                )
-                logger.info("🔄 Fallback LLM: Anthropic Claude 3 Sonnet configured")
-            except Exception as e:
-                logger.error(f"Failed to setup Anthropic Claude: {e}")
-        
-        # Tertiary LLM (Google Gemini)
-        if self._test_api_key(os.getenv("GOOGLE_API_KEY", ""), "Google"):
-            try:
-                self.tertiary_llm = LLM(
-                    model="gemini-pro",
-                    drop_params=True
-                )
-                logger.info("🔄 Tertiary LLM: Google Gemini Pro configured")
-            except Exception as e:
-                logger.error(f"Failed to setup Google Gemini: {e}")
-        
-        # Quaternary LLM (OpenAI GPT-3.5 as final fallback)
-        if self._test_api_key(os.getenv("OPENAI_API_KEY", ""), "OpenAI (GPT-3.5)"):
-            try:
-                self.quaternary_llm = LLM(
-                    model="gpt-3.5-turbo",
-                    drop_params=True,
-                    additional_drop_params=["stop"]
-                )
-                logger.info("🔄 Quaternary LLM: OpenAI GPT-3.5 Turbo configured")
-            except Exception as e:
-                logger.error(f"Failed to setup OpenAI GPT-3.5: {e}")
-    
-    def get_primary_llm(self) -> Optional[LLM]:
-        """Get the primary LLM if available"""
-        return self.primary_llm
-    
-    def get_fallback_llm(self) -> Optional[LLM]:
-        """Get the best available fallback LLM"""
-        return self.fallback_llm or self.tertiary_llm or self.quaternary_llm
-    
-    def get_best_available_llm(self) -> LLM:
-        """Get the best available LLM with fallback chain"""
-        if self.primary_llm:
-            logger.info("🎯 Using Primary LLM: GPT-4 Turbo")
-            return self.primary_llm
-        elif self.fallback_llm:
-            logger.warning("🔄 Using Fallback LLM: Claude 3 Sonnet")
-            return self.fallback_llm
-        elif self.tertiary_llm:
-            logger.warning("🔄 Using Tertiary LLM: Gemini Pro")
-            return self.tertiary_llm
-        elif self.quaternary_llm:
-            logger.warning("🔄 Using Final Fallback LLM: GPT-3.5 Turbo")
-            return self.quaternary_llm
-        else:
-            raise RuntimeError("""
-❌ No LLM providers are available. Please configure at least one API key:
-   - OPENAI_API_KEY
-   - ANTHROPIC_API_KEY
-   - GOOGLE_API_KEY
-
-Example:
-export OPENAI_API_KEY='your-openai-key-here'
-            """)
-    
-    def get_llm_for_agent(self, agent_type: str = "default") -> LLM:
-        """Get appropriate LLM for specific agent types"""
-        # You can customize LLM selection based on agent type
-        if agent_type == "threat_analyst":
-            # Prefer more analytical models for threat analysis
-            return self.primary_llm or self.fallback_llm or self.get_best_available_llm()
-        elif agent_type == "report_generator":
-            # Any good model works for report generation
-            return self.get_best_available_llm()
-        elif agent_type == "tactical_advisor":
-            # Prefer strategic thinking models
-            return self.primary_llm or self.fallback_llm or self.get_best_available_llm()
-        else:
-            return self.get_best_available_llm()
-
-    def print_llm_status(self):
-        """Print current LLM configuration status"""
-        print("\n" + "="*60)
-        print("🤖 LLM CONFIGURATION STATUS")
-        print("="*60)
-        
-        llms = [
-            ("Primary (GPT-4 Turbo)", self.primary_llm),
-            ("Fallback (Claude 3 Sonnet)", self.fallback_llm),
-            ("Tertiary (Gemini Pro)", self.tertiary_llm),
-            ("Final Fallback (GPT-3.5)", self.quaternary_llm)
-        ]
-        
-        for name, llm in llms:
-            status = "✅ Available" if llm else "❌ Not configured"
-            print(f"{name:<30} {status}")
-        
-        active_llm = self.get_best_available_llm()
-        print(f"\n🎯 Active LLM: {active_llm.model}")
-        print("="*60 + "\n")
-
-
 @CrewBase
 class TacticalCrew:
-    """Tactical Response Crew"""
+    """Tactical Response Crew with Enhanced Categorized LLM Support"""
     
     # Use file paths for the @CrewBase decorator to automatically handle loading
     agents_config = 'tactical/config/agents.yaml'
@@ -166,19 +33,20 @@ class TacticalCrew:
 
     def __init__(self):
         super().__init__()
-        # Initialize LLM manager
-        self.llm_manager = FallbackLLMManager()
-        self.llm_manager.print_llm_status()
+        # Initialize Enhanced LLM manager
+        self.llm_manager = LLMManager()
+        self.llm_manager.print_enhanced_status()
     
     @agent
     def threat_analyst_agent(self) -> Agent:
         """
         Agent to analyze and identify hostile presences from a field report.
+        Uses reasoning models for complex threat analysis.
         """
         agent_config = dict(self.agents_config['threat_analyst_agent'])
         
-        # Override LLM with fallback-enabled LLM
-        agent_config['llm'] = self.llm_manager.get_llm_for_agent('threat_analyst')
+        # Use reasoning model for complex threat analysis
+        agent_config['llm'] = self.llm_manager.get_best_model_for_task('threat_analysis')
         
         return Agent(
             config=agent_config,
@@ -190,11 +58,12 @@ class TacticalCrew:
     def report_generator_agent(self) -> Agent:
         """
         Agent to create a professional situation report.
+        Uses flash models for quick report generation.
         """
         agent_config = dict(self.agents_config['report_generator_agent'])
         
-        # Override LLM with fallback-enabled LLM
-        agent_config['llm'] = self.llm_manager.get_llm_for_agent('report_generator')
+        # Use flash model for quick report generation
+        agent_config['llm'] = self.llm_manager.get_best_model_for_task('report_generation')
         
         return Agent(
             config=agent_config,
@@ -206,11 +75,12 @@ class TacticalCrew:
     def tactical_advisor_agent(self) -> Agent:
         """
         Agent to suggest a tactical response based on the situation.
+        Uses reasoning models for strategic thinking.
         """
         agent_config = dict(self.agents_config['tactical_advisor_agent'])
         
-        # Override LLM with fallback-enabled LLM
-        agent_config['llm'] = self.llm_manager.get_llm_for_agent('tactical_advisor')
+        # Use reasoning model for strategic tactical advice
+        agent_config['llm'] = self.llm_manager.get_best_model_for_task('tactical_advisor')
         
         return Agent(
             config=agent_config,
@@ -254,10 +124,14 @@ class TacticalCrew:
     @crew
     def crew(self) -> Crew:
         """
-        Creates the Tactical Crew with the defined agents and tasks.
+        Creates the Tactical Crew with categorized LLM support.
         """
         try:
-            crew_llm = self.llm_manager.get_best_available_llm()
+            # Use the best reasoning model for crew-wide operations
+            crew_llm = self.llm_manager.get_best_model_for_task('default')
+            
+            if not crew_llm:
+                raise RuntimeError("No LLM models available for crew operations")
 
             crew = Crew(
                 agents=self.agents,  # Automatically created by the @agent decorator
@@ -269,12 +143,7 @@ class TacticalCrew:
                 llm=crew_llm
             )
             
-            # Add fallback LLM if available and supported by CrewAI version
-            fallback_llm = self.llm_manager.get_fallback_llm()
-            if fallback_llm and hasattr(crew, 'fallback_llm'):
-                crew.fallback_llm = fallback_llm
-                logger.info(f"🔄 Crew fallback LLM set to: {fallback_llm.model}")
-            
+            logger.info(f"🎯 Crew configured with primary LLM: {crew_llm.model}")
             return crew
             
         except Exception as e:
@@ -282,14 +151,36 @@ class TacticalCrew:
             raise RuntimeError(f"Cannot create crew: {e}")
 
 
-def test_llm_connectivity():
-    """Test function to verify LLM connectivity"""
-    logger.info("🧪 Testing LLM connectivity...")
+def test_enhanced_llm_connectivity():
+    """Enhanced test function to verify all LLM categories"""
+    logger.info("🧪 Testing Enhanced LLM connectivity...")
+    
     try:
-        manager = FallbackLLMManager()
-        llm = manager.get_best_available_llm()
-        logger.info(f"✅ Successfully configured LLM: {llm.model}")
-        return True, manager
+        manager = LLMManager()
+        
+        # Test each category
+        tests = [
+            ("Reasoning", manager.get_reasoning_model("A")),
+            ("Flash", manager.get_flash_model("A")),
+            ("Multimodal", manager.get_multimodal_model("A")),
+            ("Fallback", manager.get_fallback_model())
+        ]
+        
+        working_models = 0
+        for category, model in tests:
+            if model:
+                logger.info(f"✅ {category} model available: {model.model}")
+                working_models += 1
+            else:
+                logger.warning(f"❌ No {category} model available")
+        
+        if working_models > 0:
+            logger.info(f"✅ Enhanced LLM test passed! {working_models}/4 categories available")
+            return True
+        else:
+            logger.error("❌ No LLM models available in any category")
+            return False
+            
     except Exception as e:
-        logger.error(f"❌ LLM connectivity test failed: {e}")
-        return False, None
+        logger.error(f"❌ Enhanced LLM connectivity test failed: {e}")
+        return False
