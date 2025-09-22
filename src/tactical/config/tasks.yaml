@@ -1,41 +1,41 @@
-threat_analysis:
+threat_analysis_task:
   description: >
     Analyze the following field report to identify any hostile entities.
     The output should be a detailed list of all hostile presences, including
     their type (e.g., armored vehicle, infantry, air support), estimated numbers,
     and a brief description of their location and observed activity.
     {mission_report}
-  agent: threat_analyst
+  agent: threat_analyst_agent
   expected_output: >
     A clear, itemized list of hostile threats, formatted as:
     - Threat Type: [e.g., Tank, Infantry Platoon]
     - Estimated Numbers: [e.g., 3 tanks]
     - Location/Activity: [e.g., "moving south on Highway 101"]
-  output_file: output/threat_analysis.md
+  output_file: output/threat_analysis_task.md
 
-report_generation:
+report_generation_task:
   description: >
     Using the list of identified threats from the previous task,
     generate a professional situation report. The report must be concise,
     easy to read, and highlight the most critical threats at the beginning.
     It should include a summary, the detailed threat list, and a conclusion.
-  agent: report_generator
+  agent: report_generator_agent
   context:
-    - threat_analysis
+    - threat_analysis_task
   expected_output: >
     A professionally formatted situation report document, including
     a title, summary, and the detailed threat information.
-  output_file: output/report_generation.md
+  output_file: output/report_generation_task.md
 
-tactical_response:
+tactical_response_task:
   description: >
     Based on the situation report, suggest a tactical response. The response
     should be well-reasoned and consider factors such as resource availability,
     risk to friendly forces, and mission objectives.
-  agent: tactical_advisor
+  agent: tactical_advisor_agent
   context:
-    - report_generation
+    - report_generation_task
   expected_output: >
     A detailed tactical response plan, outlining specific actions,
     justifications, and potential outcomes.
-  output_file: output/tactical_response.md
+  output_file: output/tactical_response_task.md
