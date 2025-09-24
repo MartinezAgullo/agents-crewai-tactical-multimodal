@@ -25,24 +25,11 @@ def run():
     
     print("✅ LLM connectivity test passed!")
     
-    # A hardcoded mission report for demonstration purposes
-    mission_report = """
-    Field Report:
-
-    Observer: Recon Team 7
-    Date/Time: 14:30 Zulu, 19 SEP 2025
-    Location: Coordinates 40.4168° N, 3.7038° W.
-
-    Details:
-    We have observed a group of approximately 15 infantry soldiers in a wooded area near the
-    abandoned factory. They appear to be establishing a defensive position.
-    Approximately 500 meters to the east, we identified three T-90 battle tanks
-    moving slowly along a dirt road, heading towards the factory. They are supported
-    by what appears to be a mobile anti-air missile system. No other activity observed.
-    """
+    #mission_input = "inputs/text_inputs/mission_report_01.txt"
+    mission_input = "inputs/image_inputs/test_image_11_mediterranean_drone.png"
 
     inputs = {
-        'mission_report': f"{mission_report}"
+        'mission_input': f"{mission_input}"
     }
     
     try:

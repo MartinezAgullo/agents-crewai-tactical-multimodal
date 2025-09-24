@@ -2,3 +2,9 @@ crewai
 crewai[tools]
 openai
 python-dotenv
+openai-whisper
+Pillow
+pytesseract
+opencv-python
+PyPDF2
+numpy

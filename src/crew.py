@@ -6,6 +6,14 @@ from dotenv import load_dotenv
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
+# Import custom multimodal tools
+from tactical.tools.custom_multimodal_tools import (
+    AudioTranscriptionTool,
+    ImageAnalysisTool, 
+    DocumentAnalysisTool,
+    InputTypeDeterminerTool
+)
+
 # Import the enhanced LLM manager
 from llm_manager import LLMManager
 
@@ -18,6 +26,8 @@ os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY", "")
 os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
 os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY", "")
 os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
+os.environ["MISTRAL_API_KEY"] = os.getenv("MISTRAL_API_KEY", "")
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 @CrewBase
 class TacticalCrew:
-    """Tactical Response Crew with Enhanced Categorized LLM Support"""
+    """Tactical Response Crew with LLM support and multimodal processing"""
     
     # Use file paths for the @CrewBase decorator to automatically handle loading
     agents_config = 'tactical/config/agents.yaml'
@@ -36,17 +46,35 @@ class TacticalCrew:
         # Initialize Enhanced LLM manager
         self.llm_manager = LLMManager()
         self.llm_manager.print_enhanced_status()
+
+        # Initialize multimodal processing tools
+        self.multimodal_tools = self._setup_multimodal_tools()
+    
+    def _setup_multimodal_tools(self):
+        """Initialize the multimodal processing tools"""
+        return [
+            InputTypeDeterminerTool(),
+            AudioTranscriptionTool(),
+            ImageAnalysisTool(),
+            DocumentAnalysisTool()
+        ]
     
     @agent
     def threat_analyst_agent(self) -> Agent:
         """
         Agent to analyze and identify hostile presences from a field report.
         Uses reasoning models for complex threat analysis.
+        Can process text, audio, images, and documents.
         """
         agent_config = dict(self.agents_config['threat_analyst_agent'])
         
-        # Use reasoning model for complex threat analysis
+        # Use multimodal-capable reasoning model
         agent_config['llm'] = self.llm_manager.get_best_model_for_task('threat_analysis')
+
+        # Add multimodal processing tools
+        if 'tools' not in agent_config:
+            agent_config['tools'] = []
+        agent_config['tools'].extend(self.multimodal_tools)
         
         return Agent(
             config=agent_config,
@@ -92,7 +120,9 @@ class TacticalCrew:
     def threat_analysis_task(self, **kwargs) -> Task:
         """
         Task for the Threat Analyst agent to analyze the mission report.
+        The agent will automatically determine input type and process accordingly.
         """
+        
         return Task(
             config=self.tasks_config['threat_analysis_task'],
             agent=self.threat_analyst_agent(),
@@ -124,7 +154,7 @@ class TacticalCrew:
     @crew
     def crew(self) -> Crew:
         """
-        Creates the Tactical Crew with categorized LLM support.
+        Creates the Tactical Crew with muultimodal processing.
         """
         try:
             # Use the best reasoning model for crew-wide operations
@@ -134,16 +164,19 @@ class TacticalCrew:
                 raise RuntimeError("No LLM models available for crew operations")
 
             crew = Crew(
-                agents=self.agents,  # Automatically created by the @agent decorator
-                tasks=self.tasks,   # Automatically created by the @task decorator
+                agents=self.agents,
+                tasks=self.tasks,
                 process=Process.sequential,
                 verbose=True,
-                full_output=True, # Enable saving full outputs
-                output_folder='output', # Specify the output folder
+                full_output=True,
+                output_folder='output',
                 llm=crew_llm
             )
             
-            logger.info(f"🎯 Crew configured with primary LLM: {crew_llm.model}")
+            logger.info(f"Enhanced Tactical Crew configured with multimodal support")
+            logger.info(f"Primary LLM: {crew_llm.model}")
+            logger.info(f"Available tools: {len(self.multimodal_tools)} multimodal processing tools")
+            
             return crew
             
         except Exception as e:

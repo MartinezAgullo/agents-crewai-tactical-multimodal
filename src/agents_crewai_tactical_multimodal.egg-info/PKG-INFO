@@ -3,9 +3,15 @@ Name: agents-crewai-tactical-multimodal
 Version: 0.1.0
 Summary: A multi-agent system for tactical analysis using CrewAI.
 Author-email: Pablo Martínez Agulló <pablo.martinez.agullo@gmail.com>
-License: MIT
+License: GNU General Public License (GPL) 3.0
 Requires-Python: >=3.11
 Requires-Dist: crewai
 Requires-Dist: crewai[tools]
 Requires-Dist: openai
 Requires-Dist: python-dotenv
+Requires-Dist: openai-whisper
+Requires-Dist: Pillow
+Requires-Dist: pytesseract
+Requires-Dist: opencv-python
+Requires-Dist: PyPDF2
+Requires-Dist: numpy

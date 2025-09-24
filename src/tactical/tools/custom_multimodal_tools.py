@@ -1,0 +1,260 @@
+import os
+import base64
+import tempfile
+from typing import Any, Optional
+from crewai.tools import BaseTool   # Base class for custom tools
+# import openai                     # Audio processing: OpenAI Whisper API (disabled temporarily)
+import whisper                      # Audio processing: Local whisper for transcription
+from PIL import Image               # Image processing: Image manipulation
+import pytesseract                  # Image processing: OCR for text extraction
+import cv2                          # Image processing: Computer Vision
+import numpy as np                  # Numerical operations: Array processing
+from pathlib import Path            # File system: Path manipulation
+
+# Tools can either be created with the @tool decorator or with the BaseTool library
+# Here we are using BaseTool
+
+
+#####################################################################
+class AudioTranscriptionTool(BaseTool):
+    """ Transcribes audio files into text """
+    name: str = "Audio Transcription Tool"
+    description: str = "Transcribes audio files (mp3, wav, m4a, etc.) into text for threat analysis. Input should be the path to an audio file."
+    
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+    #     self.whisper_model: Optional[Any] = None
+    whisper_model: Optional[Any] = None
+    
+    def _load_whisper_model(self):
+        """Load Whisper model lazily"""
+        if self.whisper_model is None:
+            # Use 'base' model for good balance of speed/accuracy
+            # Options: tiny, base, small, medium, large
+            self.whisper_model = whisper.load_model("base")
+        return self.whisper_model
+    
+    def _run(self, audio_path: str) -> str:
+        try:
+            # Verify file exists
+            if not os.path.exists(audio_path):
+                return f"Error: Audio file not found at {audio_path}"
+            
+            # Load and transcribe
+            model = self._load_whisper_model()
+            result = model.transcribe(audio_path)
+            
+            # Format output for threat analysis
+            transcription = result['text']
+            confidence = result.get('language_probability', 0.0)
+            detected_language = result.get('language', 'unknown')
+            
+            formatted_output = f"""
+            AUDIO TRANSCRIPTION REPORT:
+            ==========================
+            Detected Language: {detected_language} (confidence: {confidence:.2f})
+            Transcription: {transcription}
+            ==========================
+            """
+            return formatted_output.strip()
+            
+        except Exception as e:
+            return f"Error processing audio file: {str(e)}"
+
+#####################################################################
+class ImageAnalysisTool(BaseTool):
+    name: str = "Image Analysis Tool" 
+    description: str = "Analyzes images for tactical/military content including personnel, vehicles, structures, and threats. Input should be the path to an image file."
+    
+    def _run(self, image_path: str) -> str:
+        try:
+            # Verify file exists
+            if not os.path.exists(image_path):
+                return f"Error: Image file not found at {image_path}"
+            
+            # Load image
+            image = Image.open(image_path)
+            
+            # OCR text extraction (if any text is visible)
+            ocr_text = self._extract_text(image)
+            
+            # Basic image analysis
+            image_info = self._analyze_image_properties(image_path)
+            
+            # Object detection summary (basic OpenCV approach)
+            object_summary = self._detect_basic_objects(image_path)
+            
+            formatted_output = f"""
+            IMAGE ANALYSIS REPORT:
+            =====================
+            Image Properties: {image_info}
+
+            Extracted Text (OCR):
+            {ocr_text if ocr_text.strip() else "No readable text detected"}
+
+            Object Detection Summary:
+            {object_summary}
+            =====================
+            """
+            return formatted_output.strip()
+            
+        except Exception as e:
+            return f"Error processing image file: {str(e)}"
+    
+    def _extract_text(self, image: Image) -> str:
+        """Extract text using OCR"""
+        try:
+            return pytesseract.image_to_string(image)
+        except Exception:
+            return "OCR processing failed"
+    
+    def _analyze_image_properties(self, image_path: str) -> str:
+        """Get basic image metadata"""
+        try:
+            image = Image.open(image_path)
+            return f"Size: {image.size}, Format: {image.format}, Mode: {image.mode}"
+        except Exception:
+            return "Unable to analyze image properties"
+    
+    def _detect_basic_objects(self, image_path: str) -> str:
+        """Basic object detection using OpenCV"""
+        try:
+            # Load image with OpenCV
+            img = cv2.imread(image_path)
+            if img is None:
+                return "Unable to load image for object detection"
+            
+            # Convert to grayscale for analysis
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # Basic shape detection
+            contours, _ = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            # Count objects by size
+            small_objects = sum(1 for c in contours if cv2.contourArea(c) < 1000)
+            medium_objects = sum(1 for c in contours if 1000 <= cv2.contourArea(c) < 10000)
+            large_objects = sum(1 for c in contours if cv2.contourArea(c) >= 10000)
+            
+            return f"Detected shapes: {small_objects} small, {medium_objects} medium, {large_objects} large objects"
+            
+        except Exception as e:
+            return f"Object detection failed: {str(e)}"
+        
+    def _describe_image_content(self, image_path: str) -> str: # to do
+        """Placeholder for advanced image content description (requires ML model)"""
+        return "Advanced image content description not implemented"
+
+#####################################################################
+class DocumentAnalysisTool(BaseTool):
+    name: str = "Document Analysis Tool"
+    description: str = "Analyzes text documents, PDFs, and other written reports for threat intelligence. Input should be the path to a document file."
+    
+    def _run(self, document_path: str) -> str:
+        try:
+            # Verify file exists
+            if not os.path.exists(document_path):
+                return f"Error: Document file not found at {document_path}"
+            
+            file_extension = Path(document_path).suffix.lower()
+            
+            if file_extension == '.txt':
+                content = self._read_text_file(document_path)
+            elif file_extension == '.pdf':
+                content = self._read_pdf_file(document_path)
+            else:
+                return f"Unsupported document type: {file_extension}"
+            
+  
+            
+            formatted_output = f"""
+            DOCUMENT ANALYSIS REPORT:
+            ========================
+            File: {os.path.basename(document_path)}
+
+            Content:
+            {content}
+            ========================
+            """
+            return formatted_output.strip()
+            
+        except Exception as e:
+            return f"Error processing document: {str(e)}"
+    
+    def _read_text_file(self, file_path: str) -> str:
+        """Read plain text file"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        except Exception as e:
+            return f"Error reading text file: {str(e)}"
+    
+    def _read_pdf_file(self, file_path: str) -> str:
+        """Read PDF file using PyPDF2"""
+        try:
+            import PyPDF2
+            with open(file_path, 'rb') as file:
+                reader = PyPDF2.PdfReader(file)
+                text = ""
+                for page in reader.pages:
+                    text += page.extract_text()
+                return text
+        except ImportError:
+            return "PDF processing requires PyPDF2: pip install PyPDF2"
+        except Exception as e:
+            return f"Error reading PDF file: {str(e)}"
+
+#####################################################################
+class InputTypeDeterminerTool(BaseTool):
+    name: str = "Input Type Determiner"
+    description: str = "Determines the type of input (text, audio, image, document) and recommends which processing tool to use. Input should be either a file path or direct text content."
+    
+    def _run(self, input_data: str) -> str:
+        # Check if it's a file path
+        if os.path.exists(input_data):
+            file_path = input_data
+            file_extension = Path(file_path).suffix.lower()
+            
+            # Audio formats (temporarily disabled)
+            if file_extension in ['.mp3', '.wav', '.m4a', '.flac', '.ogg']:
+                return f"""
+                INPUT TYPE: AUDIO FILE
+                Detected: {file_extension.upper()} audio file
+                Recommendation: Use Audio Transcription Tool to convert to text
+                File: {os.path.basename(file_path)}
+                """
+            
+            # Image formats  
+            elif file_extension in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.gif']:
+                return f"""
+                INPUT TYPE: IMAGE FILE
+                Detected: {file_extension.upper()} image file
+                Recommendation: Use Image Analysis Tool to extract tactical information
+                File: {os.path.basename(file_path)}
+                """
+            
+            # Document formats
+            elif file_extension in ['.txt', '.pdf', '.doc', '.docx']:
+                return f"""
+                INPUT TYPE: DOCUMENT FILE
+                Detected: {file_extension.upper()} document file
+                Recommendation: Use Document Analysis Tool to process text content
+                File: {os.path.basename(file_path)}
+                """
+            
+            else:
+                return f"""
+                INPUT TYPE: UNKNOWN FILE
+                Detected: {file_extension.upper()} file (unsupported format)
+                Recommendation: Convert to supported format, provide text directly or directly analyze
+                File: {os.path.basename(file_path)}
+                """
+        
+        # Assume it's direct text input
+        else:
+            word_count = len(input_data.split())
+            return f"""
+            INPUT TYPE: DIRECT TEXT
+            Detected: Text input with {word_count} words
+            Recommendation: Process directly for threat analysis
+            No additional tools needed - ready for tactical assessment
+            """

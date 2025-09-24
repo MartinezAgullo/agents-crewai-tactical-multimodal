@@ -1,3 +1,4 @@
 crew
+llm_manager
 main
 tactical

@@ -5,15 +5,29 @@ description = "A multi-agent system for tactical analysis using CrewAI."
 authors = [
     { name = "Pablo Martínez Agulló", email = "pablo.martinez.agullo@gmail.com" }
 ]
-license = { text = "MIT" }
+license = { text = "GNU General Public License (GPL) 3.0" }
 requires-python = ">=3.11"
 dependencies = [
+    # Core CrewAI dependencies
     "crewai",
     "crewai[tools]",
     "openai",
     "python-dotenv",
+    
+    # Multimodal processing dependencies
+    "openai-whisper",      # Audio transcription
+    "Pillow",              # Image processing
+    "pytesseract",         # OCR text extraction
+    "opencv-python",       # Computer vision
+    "PyPDF2",              # PDF processing
+    "numpy",               # Numerical operations
 ]
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.uv]
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]

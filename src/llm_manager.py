@@ -1,20 +1,28 @@
 import os
 import logging
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 from dotenv import load_dotenv
 from crewai import LLM
 
 logger = logging.getLogger(__name__)
 
 class LLMManager:
-    """Enhanced LLM Manager with categorized models and REAL connectivity testing"""
+    """Enhanced LLM Manager with expanded model categories and real connectivity testing"""
     
     def __init__(self):
-        # Model categories
-        self.reasoning_models = {}  # A, B, C
-        self.flash_models = {}      # A, B, C  
-        self.multimodal_models = {} # A, B, C
+        # Model categories - now supporting more than 3 models per category
+        self.reasoning_models = {}  # A, B, C, D, E, F...
+        self.flash_models = {}      # A, B, C, D, E...
+        self.multimodal_models = {} # A, B, C, D, E...
         self.fallback_model = None
+        
+        # Track attempted configurations for better error reporting
+        self.attempted_configs = {
+            'reasoning': {},
+            'flash': {},
+            'multimodal': {},
+            'fallback': []
+        }
         
         # Track which models are available
         self.available_providers = self._check_available_providers()
@@ -27,7 +35,8 @@ class LLMManager:
             'anthropic': bool(os.getenv("ANTHROPIC_API_KEY", "").strip()),
             'google': bool(os.getenv("GOOGLE_API_KEY", "").strip()),
             'deepseek': bool(os.getenv("DEEPSEEK_API_KEY", "").strip()),
-            'groq': bool(os.getenv("GROQ_API_KEY", "").strip())
+            'groq': bool(os.getenv("GROQ_API_KEY", "").strip()),
+            'mistral': bool(os.getenv("MISTRAL_API_KEY", "").strip())
         }
         
         for provider, available in providers.items():
@@ -64,6 +73,27 @@ class LLMManager:
                     drop_params=True,
                     additional_drop_params=["stop"]
                 )
+            elif provider == 'google':
+                # For Google Gemini models
+                llm = LLM(
+                    model=model,
+                    drop_params=True,
+                    additional_drop_params=["stop"]
+                )
+            elif provider == 'mistral':
+                # For Mistral models
+                llm = LLM(
+                    model=model,
+                    drop_params=True,
+                    additional_drop_params=["stop"]
+                )
+            elif provider == 'deepseek':
+                # For DeepSeek models
+                llm = LLM(
+                    model=model,
+                    drop_params=True,
+                    additional_drop_params=["stop"]
+                )
             else:
                 llm = LLM(
                     model=model,
@@ -84,76 +114,96 @@ class LLMManager:
             return None
     
     def _setup_categorized_llms(self):
-        """Setup LLMs by category with REALISTIC model choices"""
+        """Setup LLMs by category with expanded model support"""
         
-        # REASONING MODELS (Use models that actually work)
+        # REASONING MODELS - Expanded list for complex analysis
         reasoning_configs = [
-            # A: Use GPT-4 instead of o1-preview (which requires special access)
-            ("gpt-4-turbo", "openai") if self.available_providers['openai'] else None,
-            # B: Claude 3.5 Sonnet is excellent for reasoning
-            ("claude-3-5-sonnet-20241022", "anthropic") if self.available_providers['anthropic'] else None,
-            # C: GPT-4 or Gemini Pro as backup
-            ("gpt-4", "openai") if self.available_providers['openai'] 
-                else ("gemini-1.5-pro", "google") if self.available_providers['google']
-                else ("claude-3-sonnet-20240229", "anthropic") if self.available_providers['anthropic'] else None
+            # Tier 1: Premium reasoning models
+            ("gpt-4-turbo", "openai"),
+            ("claude-3-5-sonnet-20241022", "anthropic"),
+            ("gemini-2.0-flash-exp", "google"),  # Gemini 2.0 Flash Experimental for reasoning
+            
+            # Tier 2: Strong reasoning alternatives
+            ("gpt-4", "openai"),
+            ("mistral-large-2411", "mistral"),  # Mistral Large
+            ("deepseek-r1-distill-llama-70b", "deepseek"),  # DeepSeek R1 Distill
+            
+            # Tier 3: Additional reasoning options
+            ("qwen/qwen-2.5-72b-instruct", "groq"),  # Qwen 3 32B via Groq (actual model name)
+            ("llama-3.3-70b-versatile", "groq"),  # Llama as reasoning fallback
         ]
         
-        for i, config in enumerate(reasoning_configs):
-            if config and config[1] and self.available_providers.get(config[1], False):
-                model, provider = config
+        for i, (model, provider) in enumerate(reasoning_configs):
+            letter = chr(65+i)  # A, B, C, D, E, F, G, H
+            if self.available_providers.get(provider, False):
+                self.attempted_configs['reasoning'][letter] = model
                 llm = self._create_and_test_llm(model, provider)
                 if llm:
-                    self.reasoning_models[f"reasoning_{chr(65+i)}"] = llm
+                    self.reasoning_models[f"reasoning_{letter}"] = llm
+            else:
+                self.attempted_configs['reasoning'][letter] = f"{model} (no {provider} key)"
         
-        # FLASH MODELS (Fast and reliable)
+        # FLASH MODELS - Expanded for fast responses
         flash_configs = [
-            # A: Use Groq if available, otherwise GPT-4o-mini
-            ("llama-3.1-70b-versatile", "groq") if self.available_providers['groq']
-                else ("gpt-4o-mini", "openai") if self.available_providers['openai'] else None,
-            # B: Gemini Flash or Claude Haiku
-            ("gemini-1.5-flash", "google") if self.available_providers['google']
-                else ("claude-3-haiku-20240307", "anthropic") if self.available_providers['anthropic']
-                else ("gpt-3.5-turbo", "openai") if self.available_providers['openai'] else None,
-            # C: GPT-3.5 as reliable backup
-            ("gpt-3.5-turbo", "openai") if self.available_providers['openai']
-                else ("mixtral-8x7b-32768", "groq") if self.available_providers['groq']
-                else ("gemini-pro", "google") if self.available_providers['google'] else None
+            # Tier 1: Fastest models
+            ("llama-3.3-70b-versatile", "groq"),
+            ("llama-3.1-8b-instant", "groq"),
+            ("gemini-2.0-flash-exp", "google"),  # Gemini 2.0 Flash
+            
+            # Tier 2: Fast alternatives
+            ("gpt-4o-mini", "openai"),
+            ("gpt-3.5-turbo", "openai"),
+            ("claude-3-haiku-20240307", "anthropic"),
+            
+            # Tier 3: Additional fast options
+            ("mistral-small-2409", "mistral"),  # Mistral Small for fast responses
         ]
         
-        for i, config in enumerate(flash_configs):
-            if config and config[1] and self.available_providers.get(config[1], False):
-                model, provider = config
+        for i, (model, provider) in enumerate(flash_configs):
+            letter = chr(65+i)  # A, B, C, D, E, F, G
+            if self.available_providers.get(provider, False):
+                self.attempted_configs['flash'][letter] = model
                 llm = self._create_and_test_llm(model, provider)
                 if llm:
-                    self.flash_models[f"flash_{chr(65+i)}"] = llm
+                    self.flash_models[f"flash_{letter}"] = llm
+            else:
+                self.attempted_configs['flash'][letter] = f"{model} (no {provider} key)"
         
-        # MULTIMODAL MODELS (Vision-capable models)
+        # MULTIMODAL MODELS - Expanded for vision and complex input
         multimodal_configs = [
-            # A: GPT-4o (newer and more stable than vision-preview)
-            ("gpt-4o", "openai") if self.available_providers['openai'] else None,
-            # B: Gemini Pro for multimodal
-            ("gemini-1.5-pro", "google") if self.available_providers['google'] else None,
-            # C: GPT-4 Turbo as backup
-            ("gpt-4-turbo", "openai") if self.available_providers['openai']
-                else ("claude-3-5-sonnet-20241022", "anthropic") if self.available_providers['anthropic'] else None
+            # Tier 1: Best multimodal
+            ("gpt-4o", "openai"),
+            ("gemini-2.0-flash-exp", "google"),  # Gemini 2.0 for multimodal
+            ("gpt-4-turbo", "openai"),
+            
+            # Tier 2: Alternative multimodal
+            ("gpt-4", "openai"),
+            ("claude-3-5-sonnet-20241022", "anthropic"),  # Claude for text analysis
+            
+            # Tier 3: Fallback multimodal
+            ("gpt-4o-mini", "openai"),
         ]
         
-        for i, config in enumerate(multimodal_configs):
-            if config and config[1] and self.available_providers.get(config[1], False):
-                model, provider = config
+        for i, (model, provider) in enumerate(multimodal_configs):
+            letter = chr(65+i)  # A, B, C, D, E, F
+            if self.available_providers.get(provider, False):
+                self.attempted_configs['multimodal'][letter] = model
                 llm = self._create_and_test_llm(model, provider)
                 if llm:
-                    self.multimodal_models[f"multimodal_{chr(65+i)}"] = llm
+                    self.multimodal_models[f"multimodal_{letter}"] = llm
+            else:
+                self.attempted_configs['multimodal'][letter] = f"{model} (no {provider} key)"
         
-        # FALLBACK MODEL (Most reliable - test in order)
+        # FALLBACK MODEL - Most reliable options
         fallback_configs = [
             ("gpt-3.5-turbo", "openai"),
             ("claude-3-haiku-20240307", "anthropic"), 
-            ("gemini-pro", "google"),
             ("llama-3.1-8b-instant", "groq"),
+            ("mistral-small-2409", "mistral"),
         ]
         
         for model, provider in fallback_configs:
+            self.attempted_configs['fallback'].append(model)
             if self.available_providers.get(provider, False):
                 llm = self._create_and_test_llm(model, provider)
                 if llm:
@@ -161,15 +211,15 @@ class LLMManager:
                     break
     
     def get_reasoning_model(self, preference: str = "A") -> Optional[LLM]:
-        """Get reasoning model by preference (A, B, or C)"""
+        """Get reasoning model by preference (A, B, C, D, E, F, G, H)"""
         return self.reasoning_models.get(f"reasoning_{preference}")
     
     def get_flash_model(self, preference: str = "A") -> Optional[LLM]:
-        """Get flash model by preference (A, B, or C)"""
+        """Get flash model by preference (A, B, C, D, E, F, G)"""
         return self.flash_models.get(f"flash_{preference}")
     
     def get_multimodal_model(self, preference: str = "A") -> Optional[LLM]:
-        """Get multimodal model by preference (A, B, or C)"""
+        """Get multimodal model by preference (A, B, C, D, E, F)"""
         return self.multimodal_models.get(f"multimodal_{preference}")
     
     def get_fallback_model(self) -> Optional[LLM]:
@@ -180,44 +230,58 @@ class LLMManager:
         """Get the best WORKING model for a specific task type"""
         
         if task_type == "threat_analysis":
-            # Use reasoning models for complex threat analysis
-            model = (self.get_reasoning_model("A") or 
-                    self.get_reasoning_model("B") or 
-                    self.get_reasoning_model("C") or 
-                    self.get_fallback_model())
+            # Try reasoning models in order
+            for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                model = self.get_reasoning_model(letter)
+                if model:
+                    return model
+            return self.get_fallback_model()
         
         elif task_type == "report_generation":
-            # Use flash models for quick report generation
-            model = (self.get_flash_model("A") or 
-                    self.get_flash_model("B") or 
-                    self.get_flash_model("C") or 
-                    self.get_fallback_model())
+            # Try flash models in order
+            for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
+                model = self.get_flash_model(letter)
+                if model:
+                    return model
+            return self.get_fallback_model()
         
         elif task_type == "tactical_advisor":
-            # Use reasoning models for strategic thinking
-            model = (self.get_reasoning_model("A") or 
-                    self.get_multimodal_model("A") or
-                    self.get_reasoning_model("B") or 
-                    self.get_fallback_model())
+            # Try reasoning first, then multimodal
+            for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                model = self.get_reasoning_model(letter)
+                if model:
+                    return model
+            for letter in ['A', 'B', 'C', 'D', 'E', 'F']:
+                model = self.get_multimodal_model(letter)
+                if model:
+                    return model
+            return self.get_fallback_model()
         
         elif task_type == "multimodal":
-            # Use multimodal models for image/document analysis
-            model = (self.get_multimodal_model("A") or 
-                    self.get_multimodal_model("B") or 
-                    self.get_multimodal_model("C") or 
-                    self.get_fallback_model())
+            # Try multimodal models in order
+            for letter in ['A', 'B', 'C', 'D', 'E', 'F']:
+                model = self.get_multimodal_model(letter)
+                if model:
+                    return model
+            return self.get_fallback_model()
         
         else:
             # Default: try reasoning first, then flash, then fallback
-            model = (self.get_reasoning_model("A") or 
-                    self.get_flash_model("A") or 
-                    self.get_fallback_model())
+            for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                model = self.get_reasoning_model(letter)
+                if model:
+                    return model
+            for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
+                model = self.get_flash_model(letter)
+                if model:
+                    return model
+            return self.get_fallback_model()
         
-        if not model:
+        if not self.get_fallback_model():
             raise RuntimeError("No working LLM models available for any task!")
         
-        logger.info(f"🎯 Selected {model.model} for {task_type}")
-        return model
+        logger.info(f"🎯 Selected {self.get_fallback_model().model} for {task_type}")
+        return self.get_fallback_model()
     
     def get_available_models_count(self) -> Dict[str, int]:
         """Get count of available models by category"""
@@ -229,50 +293,69 @@ class LLMManager:
         }
     
     def print_enhanced_status(self):
-        """Print detailed status of all model categories with complete A/B/C listing"""
+        """Print detailed status of all model categories with expanded listing"""
         print("\n" + "="*70)
-        print("🤖 LLM CONFIGURATION STATUS (TESTED MODELS)")
+        print("🤖 LLM CONFIGURATION STATUS (EXPANDED MODELS)")
         print("="*70)
 
-        # Multimodal Models - threat_analyst_agent
-        print("\n🎨 Multimodal models :: For input processing")
-        for letter in ['A', 'B', 'C']:
-            key = f"multimodal_{letter}"
-            model_name = f"Multimodal Model {letter}"
-            llm = self.multimodal_models.get(key)
-            if llm:
-                status = f"✅ {llm.model}"
-            else:
-                status = "❌ not configured"
-            print(f"  {model_name:<20} {status}")
-
-        # Flash Models - For report_generator_agent
-        print("\n⚡ Flash models :: Message editing")
-        for letter in ['A', 'B', 'C']:
-            key = f"flash_{letter}"
-            model_name = f"Flash Model {letter}"
-            llm = self.flash_models.get(key)
-            if llm:
-                status = f"✅ {llm.model}"
-            else:
-                status = "❌ not configured"
-            print(f"  {model_name:<20} {status}")
-
-        # Reasoning Models - tactical_advisor_agent
-        print("\n🧠 Reasoning models :: Tactical organisation")
-        for letter in ['A', 'B', 'C']:
+        # Reasoning Models - expanded list
+        print("\n Reasoning models :: Tactical analysis & strategy")
+        reasoning_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        for letter in reasoning_letters:
             key = f"reasoning_{letter}"
             model_name = f"Reasoning Model {letter}"
             llm = self.reasoning_models.get(key)
+            attempted_model = self.attempted_configs['reasoning'].get(letter, "")
+            
             if llm:
                 status = f"✅ {llm.model}"
+            elif attempted_model:
+                status = f"❌ {attempted_model} not configured"
             else:
-                status = "❌ not configured"
+                continue  # Skip if no attempt was made
+            print(f"  {model_name:<20} {status}")
+
+        # Flash Models - expanded list  
+        print("\n Flash models :: Fast responses & editing")
+        flash_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+        for letter in flash_letters:
+            key = f"flash_{letter}"
+            model_name = f"Flash Model {letter}"
+            llm = self.flash_models.get(key)
+            attempted_model = self.attempted_configs['flash'].get(letter, "")
+            
+            if llm:
+                status = f"✅ {llm.model}"
+            elif attempted_model:
+                status = f"❌ {attempted_model} not configured"
+            else:
+                continue
+            print(f"  {model_name:<20} {status}")
+
+        # Multimodal Models - expanded list
+        print("\n Multimodal models :: Vision & complex input")
+        multimodal_letters = ['A', 'B', 'C', 'D', 'E', 'F']
+        for letter in multimodal_letters:
+            key = f"multimodal_{letter}"
+            model_name = f"Multimodal Model {letter}"
+            llm = self.multimodal_models.get(key)
+            attempted_model = self.attempted_configs['multimodal'].get(letter, "")
+            
+            if llm:
+                status = f"✅ {llm.model}"
+            elif attempted_model:
+                status = f"❌ {attempted_model} not configured"
+            else:
+                continue
             print(f"  {model_name:<20} {status}")
         
         # Fallback Model
-        print("\n🛡️  Fallback model :: Emergency backup")
-        fallback_status = f"✅ {self.fallback_model.model}" if self.fallback_model else "❌ not configured"
+        print("\n  Fallback model :: Emergency backup")
+        if self.fallback_model:
+            fallback_status = f"✅ {self.fallback_model.model}"
+        else:
+            attempted_models = ", ".join(self.attempted_configs['fallback'][:3])  # Show first 3
+            fallback_status = f"❌ {attempted_models}... not configured"
         print(f"  Fallback Model      {fallback_status}")
         
         # Summary
@@ -281,18 +364,25 @@ class LLMManager:
         
         print(f"\n📊 SUMMARY")
         print(f"  Total WORKING Models: {total_models}")
-        print(f"  Reasoning: {counts['reasoning']}/3")
-        print(f"  Flash: {counts['flash']}/3")
-        print(f"  Multimodal: {counts['multimodal']}/3") 
+        print(f"  Reasoning: {counts['reasoning']}/{len(reasoning_letters)}")
+        print(f"  Flash: {counts['flash']}/{len(flash_letters)}")
+        print(f"  Multimodal: {counts['multimodal']}/{len(multimodal_letters)}") 
         print(f"  Fallback: {counts['fallback']}/1")
 
         if total_models == 0:
             print("\n❌ WARNING: No working models found!")
-            print("   This usually means:")
-            print("   - API keys are invalid/expired")
-            print("   - No internet connection") 
-            print("   - Models require special access (like o1-preview)")
+            print("   Check your API keys and network connection")
+        elif total_models < 5:
+            print(f"\n⚠️  LIMITED: Only {total_models} models working")
+            print("   To unlock more models, add these API keys:")
+            if not self.available_providers.get('google'):
+                print("   • GOOGLE_API_KEY for Gemini 2.0 models")
+            if not self.available_providers.get('mistral'):
+                print("   • MISTRAL_API_KEY for Mistral Large")
+            if not self.available_providers.get('deepseek'):
+                print("   • DEEPSEEK_API_KEY for DeepSeek R1 Distill")
         else:
             print(f"\n✅ SUCCESS: {total_models} models are working and ready!")
+            print("   You have excellent model diversity!")
         
         print("="*70 + "\n")

@@ -1,10 +1,25 @@
 threat_analysis_task:
   description: >
-    Analyze the following field report to identify any hostile entities.
+    Your objective is to analyze the provided input, which could be a raw field report,
+    an image, or an audio message. Your first step is to process this input using the
+    appropriate tool to extract all relevant information. Identify any hostile entities.
+
     The output should be a detailed list of all hostile presences, including
     their type (e.g., armored vehicle, infantry, air support), estimated numbers,
     and a brief description of their location and observed activity.
-    {mission_report}
+
+    Follow these steps precisely:
+    1. **Process Raw Input**: Use the `Input Type Determiner Tool` to identify the format of the
+       provided input. Based on its recommendation, use the corresponding tool (e.g.,
+       `Audio Transcription Tool`, `Image Analysis Tool`, or `Document Analysis Tool`) to
+       convert the input into usable text data.
+    2. **Analyze and Classify**: Analyze the extracted text and/or data to identify and
+       classify all hostile entities. Focus on threats, personnel, vehicles, and their observed
+       behavior.
+    3. **Generate Threat Assessment**: Synthesize your findings into a comprehensive threat
+       assessment. The assessment must be a detailed, itemized list of all hostile presences.
+       
+    The input for this task is: {mission_input}
   agent: threat_analyst_agent
   expected_output: >
     A clear, itemized list of hostile threats, formatted as:
