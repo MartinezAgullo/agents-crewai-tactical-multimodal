@@ -9,7 +9,6 @@ from crewai.project import CrewBase, agent, crew, task
 # Import custom multimodal tools
 from tactical.tools.custom_multimodal_tools import (
     AudioTranscriptionTool,
-    ImageAnalysisTool, 
     DocumentAnalysisTool,
     InputTypeDeterminerTool
 )
@@ -55,7 +54,6 @@ class TacticalCrew:
         return [
             InputTypeDeterminerTool(),
             AudioTranscriptionTool(),
-            ImageAnalysisTool(),
             DocumentAnalysisTool()
         ]
     
@@ -79,7 +77,8 @@ class TacticalCrew:
         return Agent(
             config=agent_config,
             verbose=True,
-            allow_delegation=False
+            allow_delegation=False,
+            multimodal=True # AddImageTool is automatically included
         )
 
     @agent

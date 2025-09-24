@@ -1,3 +1,2 @@
-- Threat Type: Large unidentified object  
-- Estimated Numbers: 1 large object  
-- Location/Activity: No specific location or activity provided in the image analysis report, just the detection of 1 large object, need further on-ground or additional imagery analysis for precise location and activity.
+- Threat Type: Light Tanks - Estimated Numbers: 3 tanks - Location/Activity: "moving north, in desert terrain, possibly a staging area or frontline route."
+- Threat Type: Armored Personnel Carriers - Estimated Numbers: 5 APCs - Location/Activity: "column formation with tanks, moving north in desert terrain."
