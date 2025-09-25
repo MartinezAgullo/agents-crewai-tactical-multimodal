@@ -6,6 +6,8 @@ import shutil
 import warnings
 from pathlib import Path
 from typing import Optional, Tuple, List
+import io
+from contextlib import redirect_stdout, redirect_stderr
 
 # Import your existing crew components
 from src.crew import TacticalCrew, test_enhanced_llm_connectivity
@@ -18,6 +20,7 @@ class TacticalAnalysisInterface:
     
     def __init__(self):
         self.crew_instance = None
+        self.system_status_log = ""
         self.setup_directories()
     
     def setup_directories(self):
@@ -25,20 +28,65 @@ class TacticalAnalysisInterface:
         os.makedirs("temp_uploads", exist_ok=True)
         os.makedirs("output", exist_ok=True)
     
+    def capture_llm_status(self) -> str:
+        """Capture LLM manager status output"""
+        try:
+            # Create string buffer to capture output
+            output_buffer = io.StringIO()
+            
+            # Temporarily redirect stdout to capture prints
+            with redirect_stdout(output_buffer):
+                # Initialize crew to trigger LLM manager status
+                test_crew = TacticalCrew()
+            
+            # Get the captured output
+            captured_output = output_buffer.getvalue()
+            
+            # If no output captured, try to get status directly
+            if not captured_output.strip():
+                # Create a new crew instance and get status
+                temp_crew = TacticalCrew()
+                if hasattr(temp_crew, 'llm_manager'):
+                    output_buffer_direct = io.StringIO()
+                    with redirect_stdout(output_buffer_direct):
+                        temp_crew.llm_manager.print_enhanced_status()
+                    captured_output = output_buffer_direct.getvalue()
+            
+            return captured_output if captured_output.strip() else "LLM status not available"
+            
+        except Exception as e:
+            return f"Error capturing LLM status: {str(e)}"
+    
     def initialize_crew(self) -> Tuple[bool, str]:
         """Initialize the crew with connectivity testing"""
         try:
-            # Test LLM connectivity first
-            connectivity_ok = test_enhanced_llm_connectivity()
-            if not connectivity_ok:
-                return False, "LLM connectivity test failed. Check your API keys."
+            # Capture system status first
+            status_buffer = io.StringIO()
             
-            # Initialize crew
-            self.crew_instance = TacticalCrew()
+            with redirect_stdout(status_buffer):
+                # Test LLM connectivity first
+                connectivity_ok = test_enhanced_llm_connectivity()
+                if not connectivity_ok:
+                    return False, "LLM connectivity test failed. Check your API keys."
+                
+                # Initialize crew
+                self.crew_instance = TacticalCrew()
+            
+            # Store the captured status
+            self.system_status_log = status_buffer.getvalue()
+            
             return True, "Tactical Crew initialized successfully"
             
         except Exception as e:
             return False, f"Failed to initialize crew: {str(e)}"
+    
+    def get_system_status(self) -> str:
+        """Get the current system status"""
+        if not self.system_status_log:
+            # Try to capture status if not already done
+            self.system_status_log = self.capture_llm_status()
+        
+        return self.system_status_log or "System status not available yet"
     
     def process_file_upload(self, file) -> Optional[str]:
         """Handle file upload and return the saved file path"""
@@ -214,6 +262,21 @@ class TacticalAnalysisInterface:
                     
                     # Results tabs
                     with gr.Tabs():
+                        with gr.Tab("🔧 System Status"):
+                            system_status_output = gr.Textbox(
+                                label="LLM Manager Status",
+                                lines=25,
+                                max_lines=30,
+                                elem_classes=["analysis-output"],
+                                interactive=False,
+                                show_copy_button=True
+                            )
+                            refresh_status_btn = gr.Button(
+                                "🔄 Refresh Status",
+                                variant="secondary",
+                                size="sm"
+                            )
+                        
                         with gr.Tab("📋 Summary"):
                             summary_output = gr.Markdown(
                                 label="Analysis Summary",
@@ -271,6 +334,20 @@ class TacticalAnalysisInterface:
                 show_progress=True
             )
             
+            # Set up system status refresh
+            refresh_status_btn.click(
+                fn=self.get_system_status,
+                inputs=[],
+                outputs=[system_status_output]
+            )
+            
+            # Load initial system status
+            interface.load(
+                fn=self.get_system_status,
+                inputs=[],
+                outputs=[system_status_output]
+            )
+            
             # Footer
             gr.HTML("""
             <div style="text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid #ddd;">
@@ -293,14 +370,38 @@ def launch_gradio_interface():
     # Create Gradio interface
     interface = interface_manager.create_interface()
     
-    # Launch with configuration
-    interface.launch(
-        server_name="0.0.0.0",  # Allow external access
-        server_port=7860,
-        share=False,  # Set to True if you want a public link
-        show_error=True,
-        inbrowser=True  # Automatically open browser
-    )
+    try:
+        # Launch with configuration
+        interface.launch(
+            server_name="0.0.0.0",  # Allow external access
+            server_port=7860,
+            share=False,  # Set to True if you want a public link
+            show_error=True,
+            inbrowser=True  # Automatically open browser
+        )
+    except OSError as e:
+        if "address already in use" in str(e).lower() or "errno 48" in str(e).lower():
+            print("\n" + "="*70)
+            print("❌ ERROR: Port 7860 is already in use")
+            print("="*70)
+            print("Another Gradio instance or process is using port 7860.")
+            print("\nTo kill the process using this port, run one of these commands:")
+            print("\n🔧 Option 1 - Kill process by port:")
+            print("   lsof -ti:7860 | xargs kill -9")
+            print("\n🔧 Option 2 - Find and kill manually:")
+            print("   lsof -i:7860")
+            print("   kill -9 <PID>")
+            print("\n🔧 Option 3 - Kill all Python processes (use with caution):")
+            print("   pkill -f python")
+            print("\n🔧 Option 4 - Try a different port:")
+            print("   Edit the server_port parameter in the code")
+            print("="*70)
+        else:
+            print(f"\n❌ Launch error: {e}")
+        raise
+    except Exception as e:
+        print(f"\n❌ Unexpected error during launch: {e}")
+        raise
 
 if __name__ == "__main__":
     launch_gradio_interface()
