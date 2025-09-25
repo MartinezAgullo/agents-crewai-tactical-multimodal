@@ -25,6 +25,9 @@ dependencies = [
     # Geolocation dependencies
     "geopy",               # Geocoding and location services
     "requests",            # HTTP requests for IP geolocation
+
+    # UI dependencies
+    "gradio",  
 ]
 
 [build-system]

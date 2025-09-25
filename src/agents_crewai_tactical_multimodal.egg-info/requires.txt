@@ -10,3 +10,4 @@ PyPDF2
 numpy
 geopy
 requests
+gradio

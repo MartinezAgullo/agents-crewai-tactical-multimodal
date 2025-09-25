@@ -17,3 +17,4 @@ Requires-Dist: PyPDF2
 Requires-Dist: numpy
 Requires-Dist: geopy
 Requires-Dist: requests
+Requires-Dist: gradio

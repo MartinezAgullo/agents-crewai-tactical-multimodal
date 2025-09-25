@@ -2,6 +2,7 @@ README.md
 pyproject.toml
 src/__init__.py
 src/crew.py
+src/gradio_interface.py
 src/llm_manager.py
 src/main.py
 src/agents_crewai_tactical_multimodal.egg-info/PKG-INFO
@@ -12,4 +13,5 @@ src/agents_crewai_tactical_multimodal.egg-info/top_level.txt
 src/tactical/__init__.py
 src/tactical/config/__init__.py
 src/tactical/tools/__init__.py
+src/tactical/tools/location_tools.py
 src/tactical/tools/multimodal_tools.py

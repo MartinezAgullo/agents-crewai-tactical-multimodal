@@ -15,8 +15,11 @@ The system operates a specialized crew of AI agents that perform the following s
 3.  **Tactical Response:** The **Tactical Advisor Agent** suggests a strategic and well-reasoned response to the identified threats.
 
 The final output for each step is saved in markdown format to the `output/` directory.
+
 -----
 ### 📁 Project Structure
+This project follows the standard CrewAI scafolding
+
 ```
 .
 ├── README.md
@@ -93,7 +96,7 @@ You can modify the mission input and location in src/main.py to test different s
 
 -----
 
-### LLM Fallback system
+### 📚 LLM manager
 The LLM-fallback-manager system performs an acutual API call during its initizalisation. This goes beyond a simple check of envirorment variables.
 The system tests each configured model to confirm that it's not only set up correctly but is also functional and responsive.
 
