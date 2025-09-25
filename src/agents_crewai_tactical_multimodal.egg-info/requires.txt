@@ -8,3 +8,5 @@ pytesseract
 opencv-python
 PyPDF2
 numpy
+geopy
+requests

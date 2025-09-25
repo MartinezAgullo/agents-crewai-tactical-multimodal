@@ -15,3 +15,5 @@ Requires-Dist: pytesseract
 Requires-Dist: opencv-python
 Requires-Dist: PyPDF2
 Requires-Dist: numpy
+Requires-Dist: geopy
+Requires-Dist: requests

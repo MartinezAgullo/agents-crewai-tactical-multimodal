@@ -8,27 +8,41 @@ threat_analysis_task:
     their type (e.g., armored vehicle, infantry, air support), estimated numbers,
     and a brief description of their location and observed activity.
 
-    FFollow these steps precisely:
-    1. **Process Raw Input**:
+    Follow these steps precisely:
+    1. **Get Geographic Context**: Use the `Location Context Tool` to determine your current
+       location and get tactical information about the area, such as coordinates and
+       nearby strategic points. The location input is: {location_input}.
+       Note this information in your report. 
+    2. **Process Raw Input**:
        - If the input is a file path ending in an image extension (e.g., .jpg, .png), use the
-         `AddImageTool` to add the image to your context. This allows you to "see" the image.
+        `AddImageTool` to add the image to your context. This allows you to "see" the image.
        - If the input is an audio file, use the `Audio Transcription Tool` to convert it to text.
        - If the input is a text document, process it directly.
        - Your final goal is to extract all relevant information regardless of the input type.
-    
-    2. **Analyze and Classify**: Analyze the extracted text and/or data to identify and
+    3. **Analyze and Classify**: Analyze the extracted text and/or data to identify and
        classify all hostile entities. Focus on threats, personnel, vehicles, and their observed
        behavior.
-    3. **Generate Threat Assessment**: Synthesize your findings into a comprehensive threat
+    4. **Generate Threat Assessment**: Synthesize your findings into a comprehensive threat
        assessment. The assessment must be a detailed, itemized list of all hostile presences.
        
     The input for this task is: {mission_input}
   agent: threat_analyst_agent
   expected_output: >
-    A clear, itemized list of hostile threats, formatted as:
-    - Threat Type: [e.g., Tank, Infantry Platoon]
-    - Estimated Numbers: [e.g., 3 tanks]
-    - Location/Activity: [e.g., "moving south on Highway 101"]
+    A clear, itemized list of hostile threats, including their type, estimated numbers,
+    and a brief description of their location and observed activity. The report must
+    begin with a summary of the geographic location and its tactical implications.
+    The list should be formatted as follows:
+
+    HOSTILE THREATS:
+    - **Threat:** [Type of hostile entity, e.g., Armored Vehicle, Infantry Squad]
+      - **Numbers:** [Estimated number, e.g., 2 vehicles, 5 personnel]
+      - **Location:** [Detailed location or grid reference]
+      - **Activity:** [Observed activity, e.g., "moving east", "establishing a fortified position"]
+    - **Threat:** [Next threat]...
+
+    GEOGRAPHIC CONTEXT:
+    [Brief summary of location, terrain, and key tactical implications.]
+    
   output_file: output/threat_analysis_task.md
 
 report_generation_task:

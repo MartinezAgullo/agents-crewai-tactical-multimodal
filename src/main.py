@@ -2,6 +2,7 @@ import sys
 import warnings
 from crew import TacticalCrew, test_enhanced_llm_connectivity
 
+
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
@@ -28,8 +29,12 @@ def run():
     #mission_input = "inputs/text_inputs/mission_report_01.txt"
     mission_input = "inputs/image_inputs/test_image_11_mediterranean_drone.png"
 
+    location_input= None
+    
+
     inputs = {
-        'mission_input': f"{mission_input}"
+        'mission_input': f"{mission_input}",
+        'location_input': f"{location_input}"
     }
     
     try:

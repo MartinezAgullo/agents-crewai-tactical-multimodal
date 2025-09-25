@@ -1,5 +1,6 @@
 README.md
 pyproject.toml
+src/__init__.py
 src/crew.py
 src/llm_manager.py
 src/main.py
@@ -8,4 +9,7 @@ src/agents_crewai_tactical_multimodal.egg-info/SOURCES.txt
 src/agents_crewai_tactical_multimodal.egg-info/dependency_links.txt
 src/agents_crewai_tactical_multimodal.egg-info/requires.txt
 src/agents_crewai_tactical_multimodal.egg-info/top_level.txt
-src/tactical/tools/custom_multimodal_tools.py
+src/tactical/__init__.py
+src/tactical/config/__init__.py
+src/tactical/tools/__init__.py
+src/tactical/tools/multimodal_tools.py

@@ -7,11 +7,15 @@ from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
 # Import custom multimodal tools
-from tactical.tools.custom_multimodal_tools import (
+from src.tactical.tools.multimodal_tools import (
     AudioTranscriptionTool,
     DocumentAnalysisTool,
     InputTypeDeterminerTool
 )
+
+# Import the tools for location context
+from src.tactical.tools.location_tools import LocationContextTool
+
 
 # Import the enhanced LLM manager
 from llm_manager import LLMManager
@@ -46,15 +50,16 @@ class TacticalCrew:
         self.llm_manager = LLMManager()
         self.llm_manager.print_enhanced_status()
 
-        # Initialize multimodal processing tools
-        self.multimodal_tools = self._setup_multimodal_tools()
+        # Initialize multimodal processing and custom tools
+        self.custom_tools = self._setup_custom_tools()
     
-    def _setup_multimodal_tools(self):
-        """Initialize the multimodal processing tools"""
+    def _setup_custom_tools(self):
+        """Initialize the multimodal processing and location tools"""
         return [
             InputTypeDeterminerTool(),
             AudioTranscriptionTool(),
-            DocumentAnalysisTool()
+            DocumentAnalysisTool(),
+            LocationContextTool()
         ]
     
     @agent
@@ -69,10 +74,10 @@ class TacticalCrew:
         # Use multimodal-capable reasoning model
         agent_config['llm'] = self.llm_manager.get_best_model_for_task('threat_analysis')
 
-        # Add multimodal processing tools
+        # Add multimodal processing and location tools
         if 'tools' not in agent_config:
             agent_config['tools'] = []
-        agent_config['tools'].extend(self.multimodal_tools)
+        agent_config['tools'].extend(self.custom_tools)
         
         return Agent(
             config=agent_config,
@@ -172,9 +177,9 @@ class TacticalCrew:
                 llm=crew_llm
             )
             
-            logger.info(f"Enhanced Tactical Crew configured with multimodal support")
-            logger.info(f"Primary LLM: {crew_llm.model}")
-            logger.info(f"Available tools: {len(self.multimodal_tools)} multimodal processing tools")
+            logger.info(f"Tactical Crew configured")
+            logger.info(f" Primary LLM: {crew_llm.model}")
+            logger.info(f" Available tools: {len(self.custom_tools)} multimodal processing and gelolocation tools")
             
             return crew
             
