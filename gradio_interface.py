@@ -353,7 +353,7 @@ class TacticalAnalysisInterface:
             <div style="text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid #ddd;">
                 <p><strong>Tactical Analysis Crew v1.0</strong></p>
                 <p>Powered by CrewAI | Multimodal AI Analysis System</p>
-                <p><em>⚠️ For training and demonstration purposes only</em></p>
+                <p><em>⚠️ For demonstration purposes only</em></p>
             </div>
             """)
         

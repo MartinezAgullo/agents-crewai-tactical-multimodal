@@ -27,3 +27,4 @@ __pycache__/
 inputs/
 temp_uploads/
 uv.lock
+mqtt/log/*.log

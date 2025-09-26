@@ -2,13 +2,13 @@
 
 ## A Multimodal AI Agent Crew for Tactical Analysis
 
-This project showcases a multi-agent system built with the **CrewAI** framework, designed to simulate a tactical military analysis pipeline. It is capable of processing diverse inputs—including **text reports, images, and audio files**—to provide real-world threat assessments.
+This project showcases a multi-agent system built with the [**CrewAI**](https://www.crewai.com/) framework, designed to simulate a tactical military analysis pipeline. It is capable of processing diverse inputs—including text reports, images, and audio files to provide real-world threat assessments.
 
 -----
 
 ### ⚙️ Core Functionality
 
-The system operates a specialized crew of AI agents that perform the following steps:
+The system operates a specialized crew of AI [agents](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/tactical/config/agents.yaml) that perform the following steps:
 
 1.  **Threat Analysis:** The **Threat Analyst Agent** identifies hostile entities from raw inputs. It leverages multimodal capabilities to process images and audio, and custom tools to get real-time geographic context.
 2.  **Report Generation:** The **Report Generator Agent** synthesizes the analysis into a professional, concise situation report.
@@ -22,24 +22,33 @@ This project follows the standard CrewAI scafolding
 
 ```
 .
-├── README.md
+├── gradio_interface.py
+├── mqtt
+│   ├── config
+│   │   └── mosquitto.conf
+│   ├── data
+│   ├── log
+│   │   └── mosquitto.log
+│   ├── mqtt_client.py
+│   ├── mqtt_consumer_agent.py
+│   └── mqtt_producer.py
 ├── output
+│   ├── GradioInterface.png
 │   ├── report_generation_task.md
 │   ├── tactical_response_task.md
 │   └── threat_analysis_task.md
 ├── pyproject.toml
-├── src
-│   ├── crew.py
-│   ├── llm_manager.py
-│   ├── main.py
-│   └── tactical
-│       ├── config
-│       │   ├── agents.yaml
-│       │   └── tasks.yaml
-│       └── tools
-│           ├── location_tools.py
-│           └── multimodal_tools.py
-└── uv.lock
+└── src
+    ├── crew.py
+    ├── llm_manager.py
+    ├── main.py
+    └── tactical
+        ├── config
+        │   ├── agents.yaml
+        │   └── tasks.yaml
+        └── tools
+            ├── location_tools.py
+            └── multimodal_tools.py
 ```
 -----
 
@@ -47,13 +56,13 @@ This project follows the standard CrewAI scafolding
 
   * **Multimodal Input Processing**: Handles multiple input types, including images, audio, and text, by using specialized tools and an LLM with native vision capabilities.
 
-  * **MQTT integration**: Uses MQTTAgentConsumer to receive alerts sent with MQTT.
+  * **MQTT integration**: Uses and MQTT consumer to receive alerts.
 
   * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. 
 
-  * **Robust LLM Fallback System**: A custom `LLMManager` handles a hierarchy of LLMs, ensuring the best-suited model is chosen for each task (e.g., a "reasoning" model for analysis, a "flash" model for quick tasks), with fallback options to ensure reliability.
+  * **Robust LLM Fallback System**: A custom `LLMManager` handles a hierarchy of LLMs, ensuring the best-suited model is chosen for each [task](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/tactical/config/tasks.yaml) (e.g., a "reasoning" model for analysis, a "flash" model for quick tasks), with fallback options to ensure reliability.
 
-  * **Modular Architecture**: The project is structured with the traditional CrewAI style, i.e. separate configuration files (`.yaml`) for agents and tasks, making it easy to configure and extend. The custom tools can be defined using BaseTool from crewai.tools.
+  * **Modular Architecture**: The project is structured with the traditional CrewAI style, i.e. separate configuration files (`.yaml`) for [agents](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/tactical/config/agents.yaml) and [tasks](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/tactical/config/tasks.yaml), making it easy to configure and extend. The custom tools can be defined using BaseTool from crewai.tools.
 
 -----
 
@@ -95,6 +104,25 @@ The terminal will provide a detailed log of the agents' thought processes, and t
 You can modify the mission input and location in src/main.py to test different scenarios.:
  - mission_input: Point to text, image or audio file or directly write some mission report.
  - location_input: Provide name or coordinates. If location_input=None, your IP location will be used.
+
+#### Listening to MQTT messages
+When executing `src/main.py`, the following queestion is asked:
+```
+📡 Enable MQTT consumer? (y/N):
+```
+If you select "y"", you should open another terminal and run  
+```bash
+uv run python mqtt/mqtt_producer.py
+```
+Then, you will see the receive and process MQTT messages through the CrewAI agents.
+Notes:
+ - Make sure Mosquitto is running to explore this functionality (`cd mqtt && mosquitto -c config/mosquitto.conf`)
+ - The program will stay running until you press Ctrl+C
+ - Both your custom input and MQTT messages get processed by the same agents
+ - More info in [MQTT setup](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/mqtt/README.md)
+
+
+
 
 -----
 
@@ -168,8 +196,8 @@ current_location = None
 
 -----
 
-### Gradio interface
-A Gradio interface has been incorported.
+### 📺 Gradio interface
+A Gradio interface has been incorported via the [TacticalAnalysisInterface](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/gradio_interface.py).
     <figure style="margin: 0;">
         <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/GradioInterface.png" alt="Gradio interface" style="width: 100%; max-width: 400px; display: block;">
         <figcaption style="text-align: center; font-size: 0.9em; color: #555;">

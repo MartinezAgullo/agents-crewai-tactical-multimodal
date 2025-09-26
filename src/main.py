@@ -1,7 +1,8 @@
 import sys
 import warnings
+import threading
+import os
 from crew import TacticalCrew, test_enhanced_llm_connectivity
-
 
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
@@ -43,6 +44,15 @@ def run():
         
         # Create an instance of the TacticalCrew
         crew_instance = TacticalCrew()
+
+        # MQTT Integration - Optional
+        mqtt_enabled = input("\n📡 Enable MQTT consumer? (y/N): ").lower().strip() == 'y'
+        
+        if mqtt_enabled:
+            print("🔗 Starting MQTT consumer...")
+            mqtt_thread = start_mqtt_consumer(crew_instance)
+            print("✅ MQTT consumer started in background")
+
         
         print("\n🎯 Step 3: Starting Mission Analysis...")
         print("="*60)
@@ -57,9 +67,42 @@ def run():
         
         print("\n✅ Mission completed successfully!")
 
+        if mqtt_enabled:
+            print("📡 MQTT consumer continues running in background...")
+            print("Press Ctrl+C to stop everything")
+            
+            # Keep main thread alive if MQTT is running
+            try:
+                mqtt_thread.join()
+            except KeyboardInterrupt:
+                print("\n🛑 Stopping MQTT consumer...")
+
     except Exception as e:
         print(f"\n❌ An error occurred while running the crew: {e}", file=sys.stderr)
         sys.exit(1)
+
+def start_mqtt_consumer(crew_instance):
+    """Start MQTT consumer in background thread"""
+    try:
+        mqtt_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'mqtt')
+        if mqtt_path not in sys.path:
+            sys.path.insert(0, mqtt_path)
+        from mqtt.mqtt_consumer_agent import MQTTAgentConsumer
+        
+        def run_mqtt():
+            consumer = MQTTAgentConsumer(
+                topics=["Canal 1", "alerts"],
+                crew_instance=crew_instance
+            )
+            consumer.start()
+        
+        mqtt_thread = threading.Thread(target=run_mqtt, daemon=True)
+        mqtt_thread.start()
+        return mqtt_thread
+        
+    except ImportError:
+        print("❌ MQTT integration not available. Make sure mqtt/ folder exists.")
+        return None
 
 def main():
     """Main entry point with comprehensive error handling"""
