@@ -1,8 +1,29 @@
-.env
+Code snippet
+
+# Python
+# ----------------------------------------------------
+# Ignore standard Python virtual environment directories
 .venv/
-env/
 venv/
+env/
+# Ignore Python bytecode
 __pycache__/
 *.pyc
+
+
+# IDEs & OS
+# ----------------------------------------------------
+# Ignore files created by macOS
 .DS_Store
+# Ignore temporary files created by various editors
+*.swp
+*~
+
+# Project-specific
+# ----------------------------------------------------
+# Ignore sensitive environment variables
+.env
+# Ignore large or temporary input/upload directories
 inputs/
+temp_uploads/
+uv.lock

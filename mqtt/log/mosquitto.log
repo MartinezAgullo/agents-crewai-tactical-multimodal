@@ -1,0 +1,4 @@
+1758878512: mosquitto version 2.0.22 starting
+1758878512: Config loaded from config/mosquitto.conf.
+1758878512: Opening ipv6 listen socket on port 1883.
+1758878512: Error: Address already in use
