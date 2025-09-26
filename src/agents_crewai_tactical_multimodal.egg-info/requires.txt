@@ -11,3 +11,4 @@ numpy
 geopy
 requests
 gradio
+paho-mqtt>=2.1.0

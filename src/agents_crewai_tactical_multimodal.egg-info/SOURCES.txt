@@ -2,7 +2,6 @@ README.md
 pyproject.toml
 src/__init__.py
 src/crew.py
-src/gradio_interface.py
 src/llm_manager.py
 src/main.py
 src/agents_crewai_tactical_multimodal.egg-info/PKG-INFO

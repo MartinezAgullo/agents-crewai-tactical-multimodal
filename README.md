@@ -47,6 +47,8 @@ This project follows the standard CrewAI scafolding
 
   * **Multimodal Input Processing**: Handles multiple input types, including images, audio, and text, by using specialized tools and an LLM with native vision capabilities.
 
+  * **MQTT integration**: Uses MQTTAgentConsumer to receive alerts sent with MQTT.
+
   * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. 
 
   * **Robust LLM Fallback System**: A custom `LLMManager` handles a hierarchy of LLMs, ensuring the best-suited model is chosen for each task (e.g., a "reasoning" model for analysis, a "flash" model for quick tasks), with fallback options to ensure reliability.
@@ -163,3 +165,15 @@ current_location = None
 ```
 
   * **Note:** The agent is designed to use this tool autonomously as part of its task, so you only need to set the `current_location` variable.
+
+-----
+
+### Gradio interface
+A Gradio interface has been incorported.
+    <figure style="margin: 0;">
+        <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/GradioInterface.png" alt="Gradio interface" style="width: 100%; max-width: 400px; display: block;">
+        <figcaption style="text-align: center; font-size: 0.9em; color: #555;">
+            Gradio interface
+        </figcaption>
+    </figure>
+

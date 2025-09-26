@@ -18,3 +18,4 @@ Requires-Dist: numpy
 Requires-Dist: geopy
 Requires-Dist: requests
 Requires-Dist: gradio
+Requires-Dist: paho-mqtt>=2.1.0
