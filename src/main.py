@@ -2,7 +2,50 @@ import sys
 import warnings
 import threading
 import os
+import logging
 from crew import TacticalCrew, test_enhanced_llm_connectivity
+
+
+# Check if telemetry is enabled (CrewAI handles .env loading automatically)
+logging.getLogger("openlit").setLevel(logging.WARNING)
+TELEMETRY_ENABLED = os.getenv('TELEMETRY_ENABLED', 'false').lower() in ['true', '1', 'yes', 'on']
+
+if TELEMETRY_ENABLED:
+    print("📊 Telemetry ENABLED - Initializing instrumentation...")
+    try:
+        from opentelemetry import trace
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+        from openinference.instrumentation.crewai import CrewAIInstrumentor
+        from openinference.instrumentation.openai import OpenAIInstrumentor
+        import openlit
+
+        # Configure provider
+        provider = TracerProvider()
+        exporter = OTLPSpanExporter() 
+        provider.add_span_processor(BatchSpanProcessor(exporter))
+        trace.set_tracer_provider(provider)
+        
+        # Instrument CrewAI and OpenAI
+        CrewAIInstrumentor().instrument()
+        OpenAIInstrumentor().instrument()
+        
+        # Token monitoring
+        openlit.init()
+        
+        print("✅ Telemetry initialized successfully")
+        print(f"   📡 Endpoint: {os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT')}")
+        print(f"   🏷️  Service: {os.getenv('OTEL_SERVICE_NAME')}")
+        
+    except Exception as e:
+        print(f"❌ Failed to initialize telemetry: {e}")
+        print("   Continuing without telemetry...")
+        TELEMETRY_ENABLED = False
+else:
+    print("ℹ️  Telemetry DISABLED (set TELEMETRY_ENABLED=true in .env to enable)")
+
+
 
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")

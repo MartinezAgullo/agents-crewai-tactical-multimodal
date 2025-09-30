@@ -1,6 +1,6 @@
 # MQTT Integration
-MQTT consumer integration for CrewAI tactical agents with real-time message processing capabilities.
-To run the MQTT we use Podamn but you can use Docker intead or run Mosquitto directly wityout containers.
+[MQTT](https://mqtt.org/) consumer integration for [CrewAI](https://www.crewai.com/) tactical agents with real-time message processing capabilities.
+To run the MQTT we use [Podamn](https://podman.io/) but you can use [Docker](https://www.docker.com/) intead or run Mosquitto directly wityout containers.
 
 The follwoing instructions are to set up MQTT, a producer and a consumer with [MQTTAgentConsumer](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/mqtt/mqtt_consumer_agent.py). The `mqtt_consumer_agent.py` is just for tests, the [main code](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/main.py) incorporates its own consumer.
 

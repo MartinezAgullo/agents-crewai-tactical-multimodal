@@ -2,7 +2,7 @@
 
 ## A Multimodal AI Agent Crew for Tactical Analysis
 
-This project showcases a multi-agent system built with the [**CrewAI**](https://www.crewai.com/) framework, designed to simulate a tactical military analysis pipeline. It is capable of processing diverse inputs—including text reports, images, and audio files to provide real-world threat assessments.
+This project showcases a multi-agent system built with the [**CrewAI**](https://www.crewai.com/) framework, designed to simulate a tactical military analysis pipeline. It is capable of processing diverse inputs—including text reports, images, and audio files to provide real-world threat assessments. 
 
 -----
 
@@ -13,6 +13,8 @@ The system operates a specialized crew of AI [agents](https://github.com/Martine
 1.  **Threat Analysis:** The **Threat Analyst Agent** identifies hostile entities from raw inputs. It leverages multimodal capabilities to process images and audio, and custom tools to get real-time geographic context.
 2.  **Report Generation:** The **Report Generator Agent** synthesizes the analysis into a professional, concise situation report.
 3.  **Tactical Response:** The **Tactical Advisor Agent** suggests a strategic and well-reasoned response to the identified threats.
+
+Design pattern: These agents are connected by a **prompt chaining workflow**. This means that the general task is decomposed into a sequence of steps in which each LLM call processes the output of the precious one. The main goal is to trade off latency for higher accuracy, by making each LLM call an easier task.
 
 The final output for each step is saved in markdown format to the `output/` directory.
 
@@ -56,7 +58,7 @@ This project follows the standard CrewAI scafolding
 
   * **Multimodal Input Processing**: Handles multiple input types, including images, audio, and text, by using specialized tools and an LLM with native vision capabilities.
 
-  * **MQTT integration**: Uses and MQTT consumer to receive alerts.
+  * **MQTT integration**: Uses and [MQTT](https://mqtt.org/) consumer to receive alerts.
 
   * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. 
 
@@ -195,7 +197,91 @@ current_location = None
   * **Note:** The agent is designed to use this tool autonomously as part of its task, so you only need to set the `current_location` variable.
 
 -----
+### 📡  OpenTelemetry
+Can be use with container or standalone.
 
+**Use with Podman**
+(Podman didn't work for me)
+
+1. Step 1: Install Podman
+```bash
+# Install 
+brew install podman podman-compose
+
+# Initialize and start Podman machine
+podman machine init
+podman machine start
+```
+
+2. Step 2: Create OpenObserve Configuration
+```bash
+# From your project root
+mkdir -p openobserve
+cd openobserve
+```
+Create the Create `docker-compose.yaml`.
+
+3. Step 3: Start OpenObserve
+```bash
+# From the openobserve/ directory
+podman-compose up -d
+
+# Check if it's running
+podman-compose ps
+
+# View logs (optional)
+podman-compose logs -f
+```
+**Standalone use**
+1. [Dowload](https://openobserve.ai/downloads/) the binary 
+```
+curl -L -o openobserve-ee-v0.15.1-darwin-arm64.tar.gz https://downloads.openobserve.ai/releases/o2-enterprise/v0.15.1/openobserve-ee-v0.15.1-darwin-arm64.tar.gz
+tar -zxvf openobserve-ee-v0.15.1-darwin-arm64.tar.gz
+```
+2. Start OpenObserve
+```bash
+cd ~/openobserve
+export ZO_ROOT_USER_EMAIL="root@example.com"
+export ZO_ROOT_USER_PASSWORD="Complexpass#123"
+export ZO_DATA_DIR="./data"
+./openobserve
+```
+Keep this terminal open.
+
+3. Verify OpenObserve is Running
+
+In a new terminal:
+```bash
+curl http://localhost:5080/healthz
+```
+Should return: `{"status":"ok"}`
+
+
+4. Run the Project
+
+``` bash
+uv run python src/main.py
+```
+
+5. . View Traces
+
+Open <http://localhost:5080> in browser:
+
+-   Navigate to [Traces](http://localhost:5080/web/traces)
+-   Select stream: **default**
+-   View agent executions, LLM calls, and performance metrics
+
+**Getting the Authorization Header**
+
+1. Open http://localhost:5080 and log in
+2. Navigate to: **Ingesta → Personalizado → Registros → Otel Collector**
+3. Copy the `Authorization` header value from the curl example shown
+4. Add to your `.env` file:
+```bash
+   OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic <your-copied-value>"
+```
+
+-----
 ### 📺 Gradio interface
 A Gradio interface has been incorported via the [TacticalAnalysisInterface](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/gradio_interface.py).
     <figure style="margin: 0;">

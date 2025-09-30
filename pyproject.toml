@@ -28,6 +28,14 @@ dependencies = [
     
     # MQTT
     "paho-mqtt>=2.1.0",
+    
+    # Telemetry and Observability
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.20.0",
+    "openinference-instrumentation-crewai>=0.1.0",
+    "openinference-instrumentation-openai>=0.1.0",
+    "openlit>=1.0.0",
 ]
 
 [build-system]
