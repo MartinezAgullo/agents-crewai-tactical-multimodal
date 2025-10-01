@@ -6,19 +6,22 @@ from dotenv import load_dotenv
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
-# Import custom multimodal tools
+# Import the enhanced LLM manager
+from llm_manager import LLMManager
+
+# Import multimodal custom tools
 from src.tactical.tools.multimodal_tools import (
     AudioTranscriptionTool,
     DocumentAnalysisTool,
     InputTypeDeterminerTool
 )
 
-# Import the tools for location context
+# Import location context custom tool
 from src.tactical.tools.location_tools import LocationContextTool
 
+# Import thread classification custom tool
+from tactical.tools.classification_tool import ClassificationReferenceTool
 
-# Import the enhanced LLM manager
-from llm_manager import LLMManager
 
 # Load environment variables from .env file
 load_dotenv()
@@ -56,18 +59,25 @@ class TacticalCrew:
     def _setup_custom_tools(self):
         """Initialize the multimodal processing and location tools"""
         return [
+            # Classification system
+            ClassificationReferenceTool(),
+            
+            # Multimodal processing
             InputTypeDeterminerTool(),
             AudioTranscriptionTool(),
             DocumentAnalysisTool(),
+            
+            # Geolocation
             LocationContextTool()
         ]
     
     @agent
     def threat_analyst_agent(self) -> Agent:
         """
-        Agent to analyze and identify hostile presences from a field report.
-        Uses reasoning models for complex threat analysis.
+        Agent to analyze and identify hostile presences from a given input.
+        Uses multimodal models for complex threat analysis.
         Can process text, audio, images, and documents.
+        Has access to threat classification criteria.
         """
         agent_config = dict(self.agents_config['threat_analyst_agent'])
         
@@ -86,6 +96,7 @@ class TacticalCrew:
             multimodal=True # AddImageTool is automatically included
         )
 
+    # Only threat_analyst is using tools
     @agent
     def report_generator_agent(self) -> Agent:
         """
@@ -179,7 +190,7 @@ class TacticalCrew:
             
             logger.info(f"Tactical Crew configured")
             logger.info(f" Primary LLM: {crew_llm.model}")
-            logger.info(f" Available tools: {len(self.custom_tools)} multimodal processing and gelolocation tools")
+            logger.info(f" Available tools: {len(self.custom_tools)}")
             
             return crew
             

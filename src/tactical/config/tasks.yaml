@@ -1,73 +1,424 @@
 threat_analysis_task:
   description: >
-    Your objective is to analyze the provided input, which could be a raw field report,
-    an image, or an audio message. Your first step is to process this input using the
-    appropriate tool to extract all relevant information. Identify any hostile entities.
-
-    The output should be a detailed list of all hostile presences, including
-    their type (e.g., armored vehicle, infantry, air support), estimated numbers,
-    and a brief description of their location and observed activity.
-
-    Follow these steps precisely:
-    1. **Get Geographic Context**: Use the `Location Context Tool` to determine your current
-       location and get tactical information about the area, such as coordinates and
-       nearby strategic points. The location input is: {location_input}.
-       Note this information in your report. 
-    2. **Process Raw Input**:
-       - If the input is a file path ending in an image extension (e.g., .jpg, .png), use the
-        `AddImageTool` to add the image to your context. This allows you to "see" the image.
-       - If the input is an audio file, use the `Audio Transcription Tool` to convert it to text.
-       - If the input is a text document, process it directly.
-       - Your final goal is to extract all relevant information regardless of the input type.
-    3. **Analyze and Classify**: Analyze the extracted text and/or data to identify and
-       classify all hostile entities. Focus on threats, personnel, vehicles, and their observed
-       behavior.
-    4. **Generate Threat Assessment**: Synthesize your findings into a comprehensive threat
-       assessment. The assessment must be a detailed, itemized list of all hostile presences.
-       
-    The input for this task is: {mission_input}
-  agent: threat_analyst_agent
-  expected_output: >
-    A clear, itemized list of hostile threats, including their type, estimated numbers,
-    and a brief description of their location and observed activity. The report must
-    begin with a summary of the geographic location and its tactical implications.
-    The list should be formatted as follows:
-
-    HOSTILE THREATS:
-    - **Threat:** [Type of hostile entity, e.g., Armored Vehicle, Infantry Squad]
-      - **Numbers:** [Estimated number, e.g., 2 vehicles, 5 personnel]
-      - **Location:** [Detailed location or grid reference]
-      - **Activity:** [Observed activity, e.g., "moving east", "establishing a fortified position"]
-    - **Threat:** [Next threat]...
-
-    GEOGRAPHIC CONTEXT:
-    [Brief summary of location, terrain, and key tactical implications.]
+    MISSION: Conduct systematic threat analysis of provided intelligence (text/image/audio).
+    Identify and classify ALL detected entities using official classification criteria.
     
+    EXECUTION SEQUENCE:
+    
+    1. **Establish Geographic Context**
+       - Use `Location Context Tool` with input: {location_input}
+       - Record: coordinates, terrain type, strategic significance, nearby infrastructure
+       - Note: This provides the tactical backdrop for all subsequent analysis
+    
+    2. **Process Intelligence Input**
+       Input provided: {mission_input}.
+       - If the provided input is plain text, proceed directly to analysis.
+       - If the input is a file path, use `Input Type Determiner` to determine which tool to apply on the input.
+         Based on the determination:
+         * IF IMAGE: Use `AddImageTool` to load the image, then DESCRIBE IN DETAIL everything 
+           visible in the image (people, vehicles, structures, uniforms, weapons, insignia, 
+           terrain, activities). Be thorough and specific.
+         * IF AUDIO: Use `Audio Transcription Tool` to convert to text, then analyze the text
+         * IF DOCUMENT: Use `Document Analysis Tool` to extract text, then analyze
+         * IF TEXT: Analyze directly
+       
+      GOAL: Extract ALL observable information without adding interpretation
+    
+    3. **Detect and Catalog Entities**
+       Systematically identify:
+       - All human personnel (groups or individuals)
+       - All vehicles (military, civilian, unknown)
+       - All installations or structures
+       - All weapons or equipment visible
+       
+       For EACH entity detected, document:
+       - Physical description (uniform, clothing, equipment)
+       - Observable behavior or activity
+       - Location within the area of operations
+       - Any visible insignia, markings, or identifying features
+    
+    4. **Classify Entities Using Official Criteria**
+       **CRITICAL**: For EVERY entity detected, use the `Classification Reference Tool`.
+       
+       Provide the tool with:
+       - Detailed entity description (uniform, insignia, equipment, behavior)
+       - Tactical context (location, proximity to other entities, activity)
+       
+       The tool returns official classification criteria. Apply the decision hierarchy:
+       - Friend: Definitive friendly insignia + military uniform
+       - Foe: Definitive hostile insignia + military organization
+       - Civilian: Civilian clothing + unarmed + non-threatening behavior
+       - Unknown (Armed Civilian): Civilian clothing + weapons = ALWAYS unknown threat
+       - Unknown (Mixed Indicators): Contradictory signals = unknown
+       - Unknown (Insufficient Data): Cannot determine with confidence = unknown
+       
+       **NEVER GUESS**. If classification is uncertain, mark as Unknown and explain why.
+    
+    5. **Assess Tactical Factors (When Observable)**
+       Include ONLY if clearly visible in source intelligence:
+       - Posture/stance (defensive, aggressive, neutral, fleeing)
+       - Fields of fire / angles of vision
+       - Terrain advantages (high ground, cover, concealment)
+       - Environmental factors (weather affecting visibility, time of day, vegetation)
+       - Proximity to civilians or strategic assets
+       
+       If NOT observable, state: "Insufficient data to assess [tactical factor]"
+       
+       **DO NOT INFER**:
+       - Intent or future plans
+       - Morale or emotional state
+       - Skill level or training
+       - Anything not directly observable
+    
+    6. **Generate Intelligence Summary**
+       Compile findings into structured threat assessment (format specified in expected_output)
+  
+  agent: threat_analyst_agent
+  
+  expected_output: >
+    A comprehensive, evidence-based threat assessment formatted as follows:
+    
+    ===================================================================
+    THREAT ANALYSIS REPORT
+    ===================================================================
+    
+    GEOGRAPHIC CONTEXT:
+    - Location: [Coordinates / Place Name]
+    - Terrain: [Urban / Rural / Desert / Mountain / Forest]
+    - Strategic Significance: [Key infrastructure, supply routes, etc.]
+    - Tactical Considerations: [Elevation, natural obstacles, civilian density]
+    
+    ===================================================================
+    ENTITY CLASSIFICATION SUMMARY
+    ===================================================================
+    
+    FRIENDS: [Number] | FOES: [Number] | CIVILIANS: [Number] | UNKNOWN: [Number]
+    
+    ===================================================================
+    DETAILED THREAT ASSESSMENT
+    ===================================================================
+    
+    [FRIENDS]
+    - **Entity ID**: F-01
+      - **Classification**: Friend (Allied Military)
+      - **Description**: [Uniform, insignia, equipment observed]
+      - **Location**: [Grid reference or descriptive location]
+      - **Activity**: [Observable behavior]
+      - **Classification Basis**: [Specific indicators used: NATO patch visible, friendly IFF, etc.]
+    
+    [FOES]
+    - **Entity ID**: H-01
+      - **Classification**: Foe (Hostile Military)
+      - **Numbers**: [Count, e.g., "8 personnel"]
+      - **Description**: [Uniform, weapons, vehicles]
+      - **Location**: [Grid reference]
+      - **Activity**: [Observable behavior]
+      - **Tactical Posture**: [If observable: defensive, prepared, mobile]
+      - **Classification Basis**: [Hostile insignia, enemy uniform pattern]
+      - **Threat Level**: [High/Medium/Low based on capability + proximity]
+    
+    [CIVILIANS]
+    - **Entity ID**: C-01
+      - **Classification**: Civilian (Non-Combatant)
+      - **Numbers**: [Count]
+      - **Description**: [Civilian clothing, no weapons]
+      - **Location**: [Grid reference]
+      - **Activity**: [Observable behavior]
+      - **Classification Basis**: [Unarmed, civilian attire, non-threatening behavior]
+    
+    [UNKNOWN THREATS]
+    - **Entity ID**: U-01
+      - **Classification**: Unknown (Armed Civilian / Mixed Indicators / Insufficient Data)
+      - **Subcategory**: [Specify: Armed Civilian, Mixed Indicators, or Insufficient Data]
+      - **Numbers**: [Count]
+      - **Description**: [Observable characteristics]
+      - **Location**: [Grid reference]
+      - **Activity**: [Observable behavior]
+      - **Uncertainty Factors**: [Why classification is unknown: conflicting signals, poor visibility, etc.]
+      - **Recommended Action**: [Typically: "Further reconnaissance required before engagement"]
+    
+    ===================================================================
+    TACTICAL FACTORS ASSESSMENT
+    ===================================================================
+    
+    [Include ONLY factors observable in source intelligence]
+    
+    - **Terrain Advantage**: [Which entities have positional advantage, if observable]
+    - **Fields of Fire**: [Key firing positions, if observable]
+    - **Environmental Conditions**: [Weather, visibility, time of day if determinable]
+    - **Civilian Proximity**: [Distance to non-combatants, collateral damage risk]
+    - **Strategic Assets**: [Proximity to infrastructure, supply routes, etc.]
+    
+    **Insufficient Data For**:
+    [List tactical factors that CANNOT be determined from available intelligence]
+    
+    ===================================================================
+    INTELLIGENCE QUALITY ASSESSMENT
+    ===================================================================
+    
+    - **Source Type**: [Image / Audio / Text Report]
+    - **Quality**: [Excellent / Good / Fair / Poor]
+    - **Limitations**: [Distance, obscuration, partial view, audio-only, etc.]
+    - **Confidence Level**: [High / Medium / Low] - Overall assessment reliability
+    
+    ===================================================================
+    ANALYST NOTES
+    ===================================================================
+    
+    [Any anomalies, patterns, or critical observations requiring command attention]
+  
   output_file: output/threat_analysis_task.md
 
 report_generation_task:
   description: >
-    Using the list of identified threats from the previous task,
-    generate a professional situation report. The report must be concise,
-    easy to read, and highlight the most critical threats at the beginning.
-    It should include a summary, the detailed threat list, and a conclusion.
+    MISSION: Transform the threat analysis into a concise situation report for command consumption.
+    
+    REQUIREMENTS:
+    - **Format**: Military situation report structure (situation, threat summary, recommendations)
+    - **Length**: Maximum 2 pages when printed
+    - **Priority**: Critical threats first, then secondary concerns
+    - **Classification Labels**: Clearly mark Friend/Foe/Civilian/Unknown counts and details
+    - **Uncertainty Handling**: Unknown entities receive prominent attention with recommendation for further intelligence
+    - **Readability**: Scannable by busy command staff in under 60 seconds
+    
+    STRUCTURE:
+    1. Executive Summary (3-5 sentences): Who, what, where, threat level
+    2. Entity Classification Breakdown (table format)
+    3. Priority Threats (top 3-5 hostile or unknown entities)
+    4. Tactical Situation (terrain, environment, civilian considerations)
+    5. Intelligence Gaps (what's unknown that matters)
+    6. Recommended Intelligence Collection (if unknowns are present)
+    
+    STYLE:
+    - Use standardized military terminology
+    - Bullet points for scanability
+    - Bold/caps for critical information
+    - No speculation—only reported facts
+    - Separate "Confirmed" vs "Assessed" information clearly
+  
   agent: report_generator_agent
+  
   context:
     - threat_analysis_task
+  
   expected_output: >
-    A professionally formatted situation report document, including
-    a title, summary, and the detailed threat information.
+    A professional document formatted as follows:
+    
+    ===================================================================
+    ** SITUATION REPORT **
+    ===================================================================
+    DTG: [Date-Time Group]
+    LOCATION: [Grid Reference / Place Name]
+    CLASSIFICATION: [UNCLASS / CONFIDENTIAL / SECRET]
+    
+    -------------------------------------------------------------------
+    EXECUTIVE SUMMARY
+    -------------------------------------------------------------------
+    [3-5 sentence overview: threat level, entity counts, key concerns]
+    
+    THREAT LEVEL: **[HIGH / MEDIUM / LOW]**
+    
+    -------------------------------------------------------------------
+    ENTITY CLASSIFICATION SUMMARY
+    -------------------------------------------------------------------
+    | Category       | Count | Status                           |
+    |----------------|-------|----------------------------------|
+    | FRIENDS        | [#]   | [Brief status]                   |
+    | FOES           | [#]   | [Brief status]                   |
+    | CIVILIANS      | [#]   | [Brief status]                   |
+    | UNKNOWN        | [#]   | [Brief status - requires action] |
+    
+    -------------------------------------------------------------------
+    PRIORITY THREATS (Immediate Attention Required)
+    -------------------------------------------------------------------
+    
+    1. **[Entity ID]**: [Type] - [Location]
+       - Threat: [Why this is priority #1]
+       - Capability: [Weapons/equipment]
+       - Activity: [Current behavior]
+    
+    2. [Next priority threat...]
+    
+    -------------------------------------------------------------------
+    UNKNOWN ENTITIES (Requiring Intelligence Collection)
+    -------------------------------------------------------------------
+    
+    - **[Entity ID]**: [Brief description]
+      - Why Unknown: [Reason for uncertainty]
+      - Recommended Action: [Reconnaissance, surveillance, etc.]
+    
+    -------------------------------------------------------------------
+    TACTICAL SITUATION
+    -------------------------------------------------------------------
+    
+    **Terrain**: [Key terrain features affecting operations]
+    **Environment**: [Weather, visibility, time factors]
+    **Civilian Considerations**: [Proximity, collateral damage risk]
+    **Strategic Assets**: [Infrastructure, supply routes nearby]
+    
+    -------------------------------------------------------------------
+    INTELLIGENCE GAPS
+    -------------------------------------------------------------------
+    
+    - [What critical information is missing]
+    - [How this affects assessment reliability]
+    - [Recommended collection priorities]
+    
+    -------------------------------------------------------------------
+    BOTTOM LINE
+    -------------------------------------------------------------------
+    [One-sentence summary of the situation and urgency level]
+  
   output_file: output/report_generation_task.md
 
 tactical_response_task:
   description: >
-    Based on the situation report, suggest a tactical response. The response
-    should be well-reasoned and consider factors such as resource availability,
-    risk to friendly forces, and mission objectives.
+    MISSION: Develop ONE tactical response recommendation based on the situation report that minimizes
+    risk to friendly forces while achieving mission objectives.
+    
+    DECISION FRAMEWORK:
+    
+    1. **Default Posture: MINIMIZE RISK**
+       - Unless clear tactical advantage exists, recommend defensive/observational posture
+       - Force preservation is the priority
+    
+    2. **Clear Advantage Defined As**:
+       - Numerical superiority (≥3:1 force ratio OR overwhelming equipment advantage)
+       - Positional advantage (high ground, cover, favorable terrain)
+       - Element of surprise (enemy unaware of friendly presence)
+       - Combination of the above
+    
+    3. **Risk Assessment Categories**:
+       - **MINIMAL RISK**: Friendly forces can achieve objective with <5% casualty risk
+       - **ACCEPTABLE RISK**: 5-20% casualty risk, significant objective gain justifies
+       - **HIGH RISK**: 20-50% casualty risk, only if critical strategic objective
+       - **UNACCEPTABLE RISK**: >50% casualty risk, recommend DO NOT ENGAGE
+    
+    4. **Collateral Damage Assessment** (if applicable):
+       - Civilian Proximity: [Distance to non-combatants]
+       - Collateral Risk: [Low/Medium/High based on proximity + weapons effects]
+       - Strategic Asset Risk: [Infrastructure damage potential]
+       - Escalation Risk: [Could action trigger broader conflict beyond local area?]
+    
+    5. **Resource Considerations** (if known):
+       - Friendly force composition: [If provided, assess capability match]
+       - Ammunition/fuel status: [If known, factor into sustained operations]
+       - Medical evacuation capacity: [If known, factor into casualty handling]
+       - If resources UNKNOWN: State assumption (e.g., "Assumes standard infantry platoon")
+    
+    6. **Unknown Entity Handling**:
+       - If unknowns present: Recommend reconnaissance BEFORE decisive action
+       - Unknown armed civilians: Treat as potential threats, but avoid engagement unless hostile act
+       - If intelligence gaps exist: Note how additional info could change recommendation
+    
+    OUTPUT STRUCTURE:
+    - ONE recommended course of action (not multiple options)
+    - Explicit risk level assessment
+    - Clear justification tied to decision framework
+    - Contingencies if situation changes
+    - Information requirements that could alter the plan
+  
   agent: tactical_advisor_agent
+  
   context:
     - report_generation_task
+  
   expected_output: >
-    A detailed tactical response plan, outlining specific actions,
-    justifications, and potential outcomes.
+    A detailed tactical response plan formatted as follows:
+    
+    ===================================================================
+    ** TACTICAL RESPONSE RECOMMENDATION **
+    ===================================================================
+    
+    -------------------------------------------------------------------
+    RECOMMENDED COURSE OF ACTION (COA)
+    -------------------------------------------------------------------
+    
+    **ACTION**: [Single clear recommendation: ENGAGE / OBSERVE / WITHDRAW / RECON / etc.]
+    
+    **RISK ASSESSMENT**: **[MINIMAL / ACCEPTABLE / HIGH / UNACCEPTABLE]**
+    
+    -------------------------------------------------------------------
+    EXECUTIVE SUMMARY
+    -------------------------------------------------------------------
+    [2-3 sentences explaining the recommendation and why it's the best option]
+    
+    -------------------------------------------------------------------
+    DETAILED JUSTIFICATION
+    -------------------------------------------------------------------
+    
+    **Tactical Advantage Analysis**:
+    - Force Ratio: [Friendly vs hostile, if known]
+    - Equipment Advantage: [Comparative capability assessment]
+    - Positional Advantage: [Terrain, fields of fire, cover]
+    - Element of Surprise: [Present / Absent / Unknown]
+    - **Conclusion**: [Does clear advantage exist? Yes/No + explanation]
+    
+    **Risk Factors**:
+    - Estimated Friendly Casualties: [Percentage range or qualitative]
+    - Known Threats: [Key hostile capabilities]
+    - Unknown Threats: [How unknowns affect risk calculation]
+    - Environmental Hazards: [Weather, visibility, terrain challenges]
+    
+    **Collateral Damage Assessment**:
+    - Civilian Proximity: [Distance, estimated population]
+    - Collateral Risk Level: **[LOW / MEDIUM / HIGH]**
+    - Strategic Asset Risk: [Infrastructure damage potential]
+    - Mitigation Measures: [How to minimize collateral damage]
+    
+    **Escalation Risk**:
+    - Local Containment: [Can action be limited to immediate area?]
+    - Broader Conflict Potential: [Risk of triggering wider engagement]
+    - **Assessment**: [LOW / MEDIUM / HIGH escalation risk]
+    
+    -------------------------------------------------------------------
+    EXECUTION GUIDANCE
+    -------------------------------------------------------------------
+    
+    **Primary Actions**:
+    1. [Step-by-step execution sequence]
+    2. [Include timing, positioning, rules of engagement]
+    3. [Coordination requirements]
+    
+    **Rules of Engagement (ROE)**:
+    - Hostile Act Criteria: [What constitutes hostile action]
+    - Unknown Entity Handling: [How to treat unknowns/armed civilians]
+    - Civilian Protection Measures: [Specific restrictions]
+    
+    **Resource Requirements** (if known):
+    - Ammunition: [Estimated expenditure]
+    - Fuel: [Movement/sustainment needs]
+    - Medical: [Casualty evacuation plan]
+    - *If unknown*: [State assumptions made]
+    
+    -------------------------------------------------------------------
+    CONTINGENCIES
+    -------------------------------------------------------------------
+    
+    **If Situation Changes**:
+    - IF [condition]: THEN [alternative action]
+    - IF [condition]: THEN [alternative action]
+    
+    **Decision Points**:
+    - [At what point does commander reassess?]
+    - [What triggers shift to alternative plan?]
+    
+    -------------------------------------------------------------------
+    INFORMATION REQUIREMENTS (CRITICAL GAPS)
+    -------------------------------------------------------------------
+    
+    [List unknowns that could significantly change this recommendation]
+    
+    Priority Intelligence Requirements (PIR):
+    1. [Most critical information needed]
+    2. [Next priority...]
+    
+    -------------------------------------------------------------------
+    BOTTOM LINE UP FRONT (BLUF)
+    -------------------------------------------------------------------
+    
+    **RECOMMENDATION**: [ONE SENTENCE summary of recommended action + risk level]
+    
+    **COMMANDER'S DECISION REQUIRED BY**: [Timeframe, if applicable]
+  
   output_file: output/tactical_response_task.md

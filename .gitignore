@@ -26,7 +26,8 @@ __pycache__/
 # Ignore large or temporary input/upload directories
 inputs/
 temp_uploads/
-#uv.lock
+uv.lock
 mqtt/log/*.log
 
 openobserve
+src/agents_crewai_tactical_multimodal.egg-info

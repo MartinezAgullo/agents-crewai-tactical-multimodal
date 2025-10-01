@@ -1,0 +1,136 @@
+classification_rules:
+  description: >
+    Authoritative reference for identifying and classifying detected entities.
+    Classifications are MUTUALLY EXCLUSIVE and require DEFINITIVE indicators.
+    When indicators are mixed, contradictory, or insufficient, classify as UNKNOWN.
+
+  friends:
+    description: >
+      Allied military forces. Must display recognized friendly insignia and standard military uniform.
+    indicators:
+      uniforms:
+        - type: "NATO Standard"
+          description: "Woodland or digital camouflage with NATO flag patch on right shoulder"
+          insignia: "NATO star emblem, unit patches with blue/white NATO colors"
+        - type: "UN Peacekeepers"
+          description: "Light blue helmet or beret, white vehicles with 'UN' marking"
+          insignia: "UN logo (blue and white), national flag patch"
+        - type: "Friendly National Forces"
+          description: "Recognized national military uniform (specify allied nations)"
+          insignia: "National flag patch, unit insignia of allied forces"
+      
+      behavioral_indicators:
+        - "Coordinated movement with known friendly units"
+        - "Presence at known friendly friendly operating base or checkpoints"
+
+  foes:
+    description: >
+      Hostile military forces. Must display military organization and hostile insignia.
+    indicators:
+      uniforms:
+        - type: "Hostile State Military"
+          description: "Standard military uniform with hostile nation insignia"
+          insignia: "Enemy national flag, unit patches of hostile forces"
+        - type: "Organized Militant Groups"
+          description: "Semi-uniform appearance (matching fatigues, tactical vests)"
+          insignia: "Group-specific patches, armbands, or flags"
+      
+      behavioral_indicators:
+        - "Aggressive posture toward friendly forces"
+        - "Coordinated military movements"
+
+  civilians:
+    description: >
+      Non-combatants. No military uniform or insignia. Unarmed or carrying civilian items.
+    indicators:
+      appearance:
+        - "Civilian clothing (no military uniform elements)"
+        - "No visible weapons or military equipment"
+        - "Presence of non-combatant indicators (children, elderly, civilian vehicles)"
+      
+      behavioral_indicators:
+        - "Non-threatening behavior"
+        - "Engaged in civilian activities (farming, commerce, transit)"
+        - "Fleeing from conflict areas"
+      
+      context:
+        - "Located in civilian population centers"
+        - "No association with military formations"
+
+  unknown_threats:
+    description: >
+      Entities that cannot be definitively classified but exhibit threat indicators.
+    
+    subcategories:
+      armed_civilians:
+        description: >
+          Individuals in civilian clothing carrying weapons. ALWAYS classify as unknown_threat.
+        indicators:
+          - "Civilian clothing WITH visible firearms or military weapons"
+          - "No military uniform or insignia"
+          - "May include: local militia (unaffiliated), armed looters, unidentified combatants"
+        
+        note: >
+          Armed civilians are inherently ambiguous. They could be: local defense forces,
+          hostile insurgents, or civilians protecting property. Without additional intelligence,
+          classify as unknown_threat and recommend further reconnaissance.
+      
+      mixed_indicators:
+        description: >
+          Entities displaying contradictory classification signals.
+        examples:
+          - "Partial military uniform with civilian elements"
+          - "Military equipment but no clear insignia"
+          - "Friendly insignia in hostile-controlled territory (possible ruse)"
+          - "Behavior contradicts appearance (uniformed personnel fleeing)"
+      
+      insufficient_data:
+        description: >
+          Entities detected but lacking sufficient visual/contextual information for classification.
+        examples:
+          - "Distant figures, uniforms/insignia not visible"
+          - "Obscured by terrain, vegetation, or weather"
+          - "Audio contact only, no visual confirmation"
+
+  classification_hierarchy:
+    Each category requires clear, unambiguous evidence. The system prioritizes
+    ACCURACY over speed of classification. It is better to mark an entity as
+    UNKNOWN and gather more intelligence than to misclassify and create operational risk.
+    
+    NO HIERARCHY exists between Friend/Foe/Civilian - each requires its own
+    distinct set of indicators. An entity either meets the criteria or doesn't.
+    
+  classification_decision_process:
+    step_1: "Examine ALL observable indicators (uniform, insignia, weapons, behavior, context)"
+    step_2: "Check if entity meets DEFINITIVE criteria for Friend, Foe, or Civilian"
+    step_3: "If criteria for ONE category are clearly met → Classify accordingly"
+    step_4: "If criteria for MULTIPLE categories are present → Classify as Unknown (Mixed Indicators)"
+    step_5: "If criteria for NO category are clear → Classify as Unknown (Insufficient Data)"
+    step_6: "If armed + civilian clothing → Classify as Unknown (Armed Civilian) regardless of other factors"
+
+  assessment_guidelines:
+    do:
+      - "Base classification ONLY on observable evidence"
+      - "Note quality of intelligence (clear visual, partial view, audio only)"
+      - "Document specific indicators used for classification"
+      - "Flag anomalies or unusual patterns"
+    
+    do_not:
+      - "Assume intent or future behavior"
+      - "Infer emotional states or motivations"
+      - "Classify based on ethnicity, age, or gender alone"
+      - "Fill gaps with speculation—acknowledge insufficient data"
+  
+  reference_images:
+    friends:
+      nato_patch: "references/insignia/nato_flag_patch.jpg"
+      un_helmet: "references/insignia/un_blue_helmet.jpg"
+      friendly_national_patches:
+        - "references/insignia/us_flag_patch.jpg"
+        - "references/insignia/uk_flag_patch.jpg"
+        - "references/insignia/france_flag_patch.jpg"
+    
+    foes:
+      hostile_insignia:
+        - "references/insignia/hostile_group_a_patch.jpg"
+        - "references/insignia/hostile_nation_flag.jpg"

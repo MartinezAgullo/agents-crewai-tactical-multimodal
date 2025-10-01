@@ -2,16 +2,18 @@ import os
 import base64
 import tempfile
 from typing import Any, Optional
-from crewai.tools import BaseTool   # Base class for custom tools
-# import openai                     # Audio processing: OpenAI Whisper API (disabled temporarily)
-import whisper                      # Audio processing: Local whisper for transcription
-from pathlib import Path            # File system: Path manipulation
+from crewai.tools import BaseTool
+import whisper
+from pathlib import Path
 
-# Tools can either be created with the @tool decorator or with the BaseTool library
-# Here we are using BaseTool
+"""
+Tools created for:
+    - text-based (DocumentAnalysisTool): analyzes text documents, PDFs, and other written reports for threat intelligence.
+    - audio-based (AudioTranscriptionTool): transcribes audio files (mp3, wav, m4a, etc.) into text for threat analysis.
+For image-based inputs, the LLM itself handdles it.
+"""
 
-
-#####################################################################
+# Tools can either be created with the CrewAIs @tool decorator or with the BaseTool library
 class AudioTranscriptionTool(BaseTool):
     """ Transcribes audio files into text """
     name: str = "Audio Transcription Tool"

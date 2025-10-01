@@ -58,7 +58,9 @@ This project follows the standard CrewAI scafolding
 
   * **Multimodal Input Processing**: Handles multiple input types, including images, audio, and text, by using specialized tools and an LLM with native vision capabilities.
 
-  * **MQTT integration**: Uses and [MQTT](https://mqtt.org/) consumer to receive alerts.
+  * **MQTT integration**: Uses an [MQTT](https://mqtt.org/) consumer to receive alerts.
+
+  * **OpenObserve**: Uses [OpenObserve](https://openobserve.ai/) for telemetry monitoring.
 
   * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. 
 
@@ -107,6 +109,11 @@ You can modify the mission input and location in src/main.py to test different s
  - mission_input: Point to text, image or audio file or directly write some mission report.
  - location_input: Provide name or coordinates. If location_input=None, your IP location will be used.
 
+For users who prefer a graphical interface, do:
+```bash
+uv run python gradio_interface.py
+```
+
 #### Listening to MQTT messages
 When executing `src/main.py`, the following queestion is asked:
 ```
@@ -124,7 +131,8 @@ Notes:
  - More info in [MQTT setup](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/mqtt/README.md)
 
 
-
+#### Recording traces
+Read the **OpenTelemetry Setup** section below.
 
 -----
 
@@ -179,7 +187,45 @@ Example output of the LLM manager:
 ✅ SUCCESS: 13 models are working and ready!
    You have excellent model diversity!
 ```
-### 🗺️ Geolocation Services (Example)
+### 🗂️ Classification System
+
+The system uses a rule-based classification tool to identify entities as **Friend**, **Foe**, **Civilian**, or **Unknown**.
+
+#### How It Works
+
+1\. For each entity detected by `threat_analyst_agent`, the agent calls the [Classification Reference Tool](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/classification_tool.py)
+
+2\. The tool loads the defined criteria from `classifications.yaml` including:
+
+   - Uniform patterns and insignia descriptions
+
+   - Behavioral indicators
+
+   - Decision process rules
+
+3\. Agent compares observed characteristics against criteria
+
+4\. Entity is classified based on definitive matches:
+
+   - **Friend**: NATO/UN/Ally insignia + military uniform
+
+   - **Foe**: Hostile insignia + military organization
+
+   - **Civilian**: No uniform + unarmed + non-threatening
+
+   - **Unknown**: Armed civilians, mixed indicators, or insufficient data
+
+
+**No guessing**: If classification is ambiguous, the entity is marked as Unknown with explanation. Accuracy is prioritized over speed to prevent operational errors.
+
+#### Configuration
+
+- Classification rules and criteria: `src/tactical/config/classifications.yaml`
+
+- Reference images: `src/tactical/references/insignia/`
+
+
+### 🗺️ Geolocation Services
 
 The system's `LocationContextTool` can be used to add geographic context to the mission. Here's how to configure it in `src/main.py`:
 
@@ -197,13 +243,48 @@ current_location = None
   * **Note:** The agent is designed to use this tool autonomously as part of its task, so you only need to set the `current_location` variable.
 
 -----
-### 📡  OpenTelemetry
-Can be use with container or standalone.
+### 📡 OpenTelemetry Setup
+This project supports telemetry monitoring using [OpenObserve](https://openobserve.ai/). You can run OpenObserve either with containers (Podman/Docker) or as a standalone binary.
 
-**Use with Podman**
+OpenObserve can be deployed in two ways:
+1. **Standalone binary** (recommended for macOS): A single executable that runs directly on your machine - simpler setup, no container dependencies
+2. **Container deployment** (Podman/Docker): Isolated environment with automatic restarts and easier management - better for production use. 
+
+The telemetry system is completely **optional** and can be toggled on/off via environment variables without modifying your code. When disabled, your project runs normally with zero performance overhead.
+
+#### Option 1: Standalone Binary (Recommended for macOS)
+
+1. [Dowload](https://openobserve.ai/downloads/) the binary 
+```bash
+cd ~
+mkdir openobserve && cd openobserve
+curl -L -o openobserve-ee-v0.15.1-darwin-arm64.tar.gz https://downloads.openobserve.ai/releases/o2-enterprise/v0.15.1/openobserve-ee-v0.15.1-darwin-arm64.tar.gz
+tar -zxvf openobserve-ee-v0.15.1-darwin-arm64.tar.gz
+```
+For other platforms, visit: https://github.com/openobserve/openobserve/releases
+
+2. Start OpenObserve
+```bash
+cd ~/openobserve
+export ZO_ROOT_USER_EMAIL="root@example.com"
+export ZO_ROOT_USER_PASSWORD="Complexpass#123"
+export ZO_DATA_DIR="./data"
+./openobserve
+```
+⚠️ Keep this terminal open - OpenObserve runs in the foreground.
+
+3. Verify OpenObserve is Running
+
+In a new terminal:
+```bash
+curl http://localhost:5080/healthz
+```
+Should return: `{"status":"ok"}`
+
+#### Option 2: Using Podman/Docker
 (Podman didn't work for me)
 
-1. Step 1: Install Podman
+1. Install Podman
 ```bash
 # Install 
 brew install podman podman-compose
@@ -213,7 +294,7 @@ podman machine init
 podman machine start
 ```
 
-2. Step 2: Create OpenObserve Configuration
+2. Create OpenObserve Configuration
 ```bash
 # From your project root
 mkdir -p openobserve
@@ -221,7 +302,7 @@ cd openobserve
 ```
 Create the Create `docker-compose.yaml`.
 
-3. Step 3: Start OpenObserve
+3. Start OpenObserve
 ```bash
 # From the openobserve/ directory
 podman-compose up -d
@@ -232,44 +313,6 @@ podman-compose ps
 # View logs (optional)
 podman-compose logs -f
 ```
-**Standalone use**
-1. [Dowload](https://openobserve.ai/downloads/) the binary 
-```
-curl -L -o openobserve-ee-v0.15.1-darwin-arm64.tar.gz https://downloads.openobserve.ai/releases/o2-enterprise/v0.15.1/openobserve-ee-v0.15.1-darwin-arm64.tar.gz
-tar -zxvf openobserve-ee-v0.15.1-darwin-arm64.tar.gz
-```
-2. Start OpenObserve
-```bash
-cd ~/openobserve
-export ZO_ROOT_USER_EMAIL="root@example.com"
-export ZO_ROOT_USER_PASSWORD="Complexpass#123"
-export ZO_DATA_DIR="./data"
-./openobserve
-```
-Keep this terminal open.
-
-3. Verify OpenObserve is Running
-
-In a new terminal:
-```bash
-curl http://localhost:5080/healthz
-```
-Should return: `{"status":"ok"}`
-
-
-4. Run the Project
-
-``` bash
-uv run python src/main.py
-```
-
-5. . View Traces
-
-Open <http://localhost:5080> in browser:
-
--   Navigate to [Traces](http://localhost:5080/web/traces)
--   Select stream: **default**
--   View agent executions, LLM calls, and performance metrics
 
 **Getting the Authorization Header**
 
@@ -281,13 +324,49 @@ Open <http://localhost:5080> in browser:
    OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic <your-copied-value>"
 ```
 
+**Run and Monitor**
+1. Run the Project:
+``` bash
+uv run python src/main.py
+```
+
+2. View Traces
+- Open <http://localhost:5080> in browser:
+- Navigate to [Traces](http://localhost:5080/web/traces)
+- Select stream: **default**
+- View agent executions, LLM calls, and performance metrics
+
+**Stop OpenObserve**
+A) Standalone
+``` bash
+# Press Ctrl+C in the OpenObserve terminal
+```
+B) Podman
+``` bash
+podman-compose down
+```
+
 -----
 ### 📺 Gradio interface
-A Gradio interface has been incorported via the [TacticalAnalysisInterface](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/gradio_interface.py).
+An alternative web-based interface is available via Gradio for users who prefer a graphical interface over the command line.
+It has been incorported via the [TacticalAnalysisInterface](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/gradio_interface.py).
     <figure style="margin: 0;">
         <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/GradioInterface.png" alt="Gradio interface" style="width: 100%; max-width: 400px; display: block;">
-        <figcaption style="text-align: center; font-size: 0.9em; color: #555;">
-            Gradio interface
-        </figcaption>
     </figure>
 
+#### Launch Gradio Interface
+
+**Instead of running `main.py`**, launch the Gradio interface:
+```bash
+uv run python gradio_interface.py
+```
+
+Note I: Gradio interface provides the same tactical analysis capabilities as main.py but through an interactive web UI. Use either the Gradio interface OR the command-line execution, not both simultaneously.
+
+Note II: Neither MQTT nor OpenObserve have been implemented on gradio yet.
+
+
+
+
+
+<!-- tree -I "__pycache__|agents_crewai_tactical_multimodal.egg-info|__init__.py|inputs|uv.lock|README.md|data|openobserve-ee-v0.15.1-darwin-arm64.tar.gz" -->
