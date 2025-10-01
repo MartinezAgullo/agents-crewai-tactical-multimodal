@@ -31,3 +31,5 @@ mqtt/log/*.log
 
 openobserve
 src/agents_crewai_tactical_multimodal.egg-info
+src/tactical/references
+output/*.md

@@ -6,33 +6,22 @@ from dotenv import load_dotenv
 from crewai import Agent, Crew, Process, Task, LLM
 from crewai.project import CrewBase, agent, crew, task
 
-# Import the enhanced LLM manager
-from llm_manager import LLMManager
+from src.tactical.config.config_loader import load_execution_config
 
-# Import multimodal custom tools
+from src.tactical.tools.llm_manager import LLMManager
 from src.tactical.tools.multimodal_tools import (
     AudioTranscriptionTool,
     DocumentAnalysisTool,
     InputTypeDeterminerTool
 )
-
-# Import location context custom tool
 from src.tactical.tools.location_tools import LocationContextTool
-
-# Import thread classification custom tool
-from tactical.tools.classification_tool import ClassificationReferenceTool
+from src.tactical.tools.classification_tool import ClassificationReferenceTool
 
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Set up API keys from environment variables
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "")
-os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY", "")
-os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
-os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY", "")
-os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
-os.environ["MISTRAL_API_KEY"] = os.getenv("MISTRAL_API_KEY", "")
+
 
 
 # Configure logging
@@ -49,10 +38,25 @@ class TacticalCrew:
 
     def __init__(self):
         super().__init__()
-        # Initialize Enhanced LLM manager
-        self.llm_manager = LLMManager()
-        self.llm_manager.print_enhanced_status()
 
+        config = load_execution_config()
+        self.exec_config = config['execution']
+        self.log_config = config.get('logging', {})
+
+        # Apply logging configuration
+        log_level = getattr(logging, self.log_config.get('level', 'INFO'))
+        logging.getLogger().setLevel(log_level)
+
+        # Initialize LLM Manager if enabled
+        if self.exec_config.get('execute_LLM_manager', True):
+            from src.tactical.tools.llm_manager import LLMManager
+            self.llm_manager = LLMManager()
+            if self.log_config.get('show_llm_status', True):
+                self.llm_manager.print_enhanced_status()
+        else:
+            self.llm_manager = None
+            logger.info("ℹ️  LLM Manager disabled - using default LLM configuration")
+        
         # Initialize multimodal processing and custom tools
         self.custom_tools = self._setup_custom_tools()
     
@@ -71,6 +75,12 @@ class TacticalCrew:
             LocationContextTool()
         ]
     
+    def _get_llm_for_task(self, task_type: str):
+        """Get appropriate LLM for task type."""
+        if self.llm_manager:
+            return self.llm_manager.get_best_model_for_task(task_type)
+        return None  # Will use CrewAI default
+
     @agent
     def threat_analyst_agent(self) -> Agent:
         """
@@ -82,7 +92,9 @@ class TacticalCrew:
         agent_config = dict(self.agents_config['threat_analyst_agent'])
         
         # Use multimodal-capable reasoning model
-        agent_config['llm'] = self.llm_manager.get_best_model_for_task('threat_analysis')
+        llm = self._get_llm_for_task('threat_analysis')
+        if llm:
+            agent_config['llm'] = llm
 
         # Add multimodal processing and location tools
         if 'tools' not in agent_config:
@@ -105,8 +117,11 @@ class TacticalCrew:
         """
         agent_config = dict(self.agents_config['report_generator_agent'])
         
-        # Use flash model for quick report generation
-        agent_config['llm'] = self.llm_manager.get_best_model_for_task('report_generation')
+        
+        # Use flash model for quick report generation)
+        llm = self._get_llm_for_task('report_generation')
+        if llm:
+            agent_config['llm'] = llm
         
         return Agent(
             config=agent_config,
@@ -123,7 +138,9 @@ class TacticalCrew:
         agent_config = dict(self.agents_config['tactical_advisor_agent'])
         
         # Use reasoning model for strategic tactical advice
-        agent_config['llm'] = self.llm_manager.get_best_model_for_task('tactical_advisor')
+        llm = self._get_llm_for_task('tactical_advisor')
+        if llm:
+            agent_config['llm'] = llm
         
         return Agent(
             config=agent_config,
@@ -172,11 +189,14 @@ class TacticalCrew:
         Creates the Tactical Crew with muultimodal processing.
         """
         try:
-            # Use the best reasoning model for crew-wide operations
-            crew_llm = self.llm_manager.get_best_model_for_task('default')
+            # Use the helper method instead of calling llm_manager directly
+            crew_llm = self._get_llm_for_task('default')
             
-            if not crew_llm:
-                raise RuntimeError("No LLM models available for crew operations")
+            # Don't raise error if LLM manager is disabled - let CrewAI use its default
+            if crew_llm:
+                logger.info(f"Using custom LLM: {crew_llm}")
+            else:
+                logger.info("Using CrewAI default LLM configuration")
 
             crew = Crew(
                 agents=self.agents,
@@ -185,11 +205,11 @@ class TacticalCrew:
                 verbose=True,
                 full_output=True,
                 output_folder='output',
-                llm=crew_llm
+                llm=crew_llm # Can be None - CrewAI will handle it
             )
             
             logger.info(f"Tactical Crew configured")
-            logger.info(f" Primary LLM: {crew_llm.model}")
+            logger.info(f" Primary LLM: {crew_llm if crew_llm else 'CrewAI Default'}")
             logger.info(f" Available tools: {len(self.custom_tools)}")
             
             return crew
@@ -201,6 +221,13 @@ class TacticalCrew:
 
 def test_enhanced_llm_connectivity():
     """Enhanced test function to verify all LLM categories"""
+    config = load_execution_config()
+    
+    if not config['execution'].get('execute_LLM_manager', True):
+        logger.info("ℹ️  LLM Manager disabled - skipping connectivity test")
+        return True
+
+
     logger.info("🧪 Testing Enhanced LLM connectivity...")
     
     try:
@@ -232,3 +259,4 @@ def test_enhanced_llm_connectivity():
     except Exception as e:
         logger.error(f"❌ Enhanced LLM connectivity test failed: {e}")
         return False
+

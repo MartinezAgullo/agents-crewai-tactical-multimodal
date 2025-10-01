@@ -28,12 +28,13 @@ This project follows the standard CrewAI scafolding
 ├── mqtt
 │   ├── config
 │   │   └── mosquitto.conf
-│   ├── data
 │   ├── log
 │   │   └── mosquitto.log
 │   ├── mqtt_client.py
 │   ├── mqtt_consumer_agent.py
 │   └── mqtt_producer.py
+├── openobserve
+│   └── openobserve
 ├── output
 │   ├── GradioInterface.png
 │   ├── report_generation_task.md
@@ -47,8 +48,13 @@ This project follows the standard CrewAI scafolding
     └── tactical
         ├── config
         │   ├── agents.yaml
+        │   ├── classifications.yaml
+        │   ├── execution_config.yaml
         │   └── tasks.yaml
+        ├── references
+        │   └── insignia
         └── tools
+            ├── classification_tool.py
             ├── location_tools.py
             └── multimodal_tools.py
 ```
@@ -114,12 +120,21 @@ For users who prefer a graphical interface, do:
 uv run python gradio_interface.py
 ```
 
-#### Listening to MQTT messages
-When executing `src/main.py`, the following queestion is asked:
+#### Configuration:
+
+Edit the configuration file `execution_config.yaml` in order to disable or enable the different services.
+```bash
+vim src/tactical/config/execution_config.yaml
 ```
-📡 Enable MQTT consumer? (y/N):
+From here you can control wether or not to use the enhance LLM manager, the consumtion of MQTT messages and the open telemetry monitoring. 
+```bash
+execute_LLM_manager: false
+enable_MQTT_consumer: false
+enable_telemetry: false
 ```
-If you select "y"", you should open another terminal and run  
+
+**MQTT**
+If you set enable_MQTT_consumer to true, in a separete terminal you shall execute the command below to prouce messages:
 ```bash
 uv run python mqtt/mqtt_producer.py
 ```
@@ -131,8 +146,8 @@ Notes:
  - More info in [MQTT setup](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/mqtt/README.md)
 
 
-#### Recording traces
-Read the **OpenTelemetry Setup** section below.
+**Recording traces**
+If you set enable_telemetry to true, read the **OpenTelemetry Setup** section below.
 
 -----
 

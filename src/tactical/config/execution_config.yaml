@@ -1,0 +1,26 @@
+# Execution Configuration
+# Controls optional features and integrations
+
+execution:
+  # LLM Manager - Enhanced multi-provider LLM fallback system
+  # When enabled: Tests and selects best available LLM from configured providers
+  # When disabled: Uses basic LLM configuration
+  execute_LLM_manager: false
+  
+  # MQTT Consumer - Receives and processes real-time tactical alerts
+  # Requires: Mosquitto broker running on localhost:1883
+  # When enabled: Crew processes both manual inputs and MQTT messages
+  # When disabled: Crew only processes manual inputs
+  enable_MQTT_consumer: false
+  
+  # OpenTelemetry - Exports traces to OpenObserve for monitoring
+  # Requires: OpenObserve running on localhost:5080 and OTEL_EXPORTER_OTLP_HEADERS in .env
+  # When enabled: Records agent execution traces, tool calls, and performance metrics
+  # When disabled: No telemetry data is collected
+  enable_telemetry: false
+
+# Logging configuration
+logging:
+  level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
+  show_llm_calls: true  # Log LLM API calls
+  show_tool_usage: true  # Log tool invocations
