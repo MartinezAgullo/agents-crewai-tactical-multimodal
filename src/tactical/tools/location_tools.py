@@ -1,14 +1,28 @@
 import os
 import requests
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, Type
 from crewai.tools import BaseTool
 from geopy.geocoders import Nominatim
+from pydantic import BaseModel, Field
+
+
+class LocationContextInput(BaseModel):
+    """Input schema for location context tool."""
+    location_input: Optional[str] = Field(
+        default=None,
+        description="Location name, coordinates (e.g., '40.4168, -3.7038'), or None for IP-based detection"
+    )
 
 class LocationContextTool(BaseTool):
     """Retrieves current location and provides tactical geographic context"""
     name: str = "Location Context Tool"
-    description: str = "Determines current geographic location and provides tactical context including coordinates, terrain type, and nearby strategic points."
-    
+    description: str = (
+        "Determines current geographic location and provides tactical context including "
+        "coordinates, terrain type, and nearby strategic points. "
+        "Input: location_input (optional string - location name, coordinates, or None for IP detection)"
+    )
+    args_schema: Type[BaseModel] = LocationContextInput
+
     def _get_geolocator(self):
         """Get geolocator instance"""
         return Nominatim(user_agent="tactical_crew_location")
@@ -46,8 +60,7 @@ class LocationContextTool(BaseTool):
             TERRAIN ANALYSIS:
             {terrain_info}
             
-            STRATEGIC CONTEXT:
-            {strategic_context}
+            STRATEGIC CONTEXT:{strategic_context}
             
             TACTICAL IMPLICATIONS:
             - Elevation and terrain affect line of sight
@@ -181,14 +194,14 @@ class LocationContextTool(BaseTool):
     def _get_strategic_context(self, lat: float, lon: float) -> str:
         """Provide strategic context for the location"""
         try:
-            context_notes = []
-            
-            context_notes.append("- Assess proximity to major urban centers")
-            context_notes.append("- Consider transportation infrastructure access")
-            context_notes.append("- Evaluate communication coverage in area")
-            context_notes.append("- Check for restricted or sensitive zones nearby")
-            
-            return "\n".join(context_notes)
+            context_string = (
+                "              - Assess proximity to major urban centers\n"
+                "              - Consider transportation infrastructure access\n"
+                "              - Evaluate communication coverage in area\n"
+                "              - Check for restricted or sensitive zones nearby"
+            )
+        
+            return context_string
             
         except Exception:
             return "Strategic context analysis unavailable"

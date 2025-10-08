@@ -1,69 +1,151 @@
 import os
-import base64
 import tempfile
-from typing import Any, Optional
+from typing import Any, Optional, Type
 from crewai.tools import BaseTool
-import whisper
+from pydantic import BaseModel, Field
 from pathlib import Path
+import subprocess
+
 
 """
 Tools created for:
     - text-based (DocumentAnalysisTool): analyzes text documents, PDFs, and other written reports for threat intelligence.
     - audio-based (AudioTranscriptionTool): transcribes audio files (mp3, wav, m4a, etc.) into text for threat analysis.
-For image-based inputs, the LLM itself handdles it.
+            The parameter NUM_SPEAKERS has been set to 2, which is the common in military conversations.
+
+For image-based inputs, the LLM itself handles it.
 """
 
-# Tools can either be created with the CrewAIs @tool decorator or with the BaseTool library
+
+# ============================================================================
+# INPUT SCHEMAS FOR PYDANTIC VALIDATION
+# ============================================================================
+
+class AudioTranscriptionInput(BaseModel):
+    """Input schema for audio transcription."""
+    audio_path: str = Field(
+        ...,
+        description="Path to the audio file to transcribe (mp3, wav, m4a, etc.)"
+    )
+
+
+class DocumentAnalysisInput(BaseModel):
+    """Input schema for document analysis."""
+    document_path: str = Field(
+        ...,
+        description="Path to the document file to analyze (txt, pdf)"
+    )
+
+
+class InputTypeDeterminerInput(BaseModel):
+    """Input schema for input type determination."""
+    input_data: str = Field(
+        ...,
+        description="File path or direct text content to analyze"
+    )
+
+
+# ============================================================================
+# AUDIO TRANSCRIPTION TOOL
+# ============================================================================
+
 class AudioTranscriptionTool(BaseTool):
-    """ Transcribes audio files into text """
+    """Transcribes audio files into text with speaker diarization"""
     name: str = "Audio Transcription Tool"
-    description: str = "Transcribes audio files (mp3, wav, m4a, etc.) into text for threat analysis. Input should be the path to an audio file."
+    description: str = (
+        "Transcribes audio files (mp3, wav, m4a, etc.) into text for threat analysis. "
+        "Now includes speaker diarization using pyannote.audio. "
+        "Input: audio_path (string - path to audio file)"
+    )
+    args_schema: Type[BaseModel] = AudioTranscriptionInput
     
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
-    #     self.whisper_model: Optional[Any] = None
     whisper_model: Optional[Any] = None
-    
+    diarization_pipeline: Optional[Any] = None
+
     def _load_whisper_model(self):
-        """Load Whisper model lazily"""
+        """Lazy load whisper model only when needed"""
         if self.whisper_model is None:
-            # Use 'base' model for good balance of speed/accuracy
-            # Options: tiny, base, small, medium, large
-            self.whisper_model = whisper.load_model("base")
+            try:
+                import whisper  # Import only when needed
+                self.whisper_model = whisper.load_model("base")
+            except ImportError:
+                raise ImportError(
+                    "Whisper is not installed. Install it with: pip install openai-whisper"
+                )
         return self.whisper_model
-    
+
+    def _load_diarization_pipeline(self):
+        """Lazy load diarization pipeline only when needed"""
+        if self.diarization_pipeline is None:
+            try:
+                from pyannote.audio import Pipeline  # Import only when needed
+                hf_token = os.getenv("HF_TOKEN", None)
+                self.diarization_pipeline = Pipeline.from_pretrained(
+                    "pyannote/speaker-diarization-3.1",
+                    use_auth_token=hf_token
+                )
+            except ImportError:
+                raise ImportError(
+                    "Pyannote.audio is not installed. Install it with: pip install pyannote.audio"
+                )
+        return self.diarization_pipeline
+
     def _run(self, audio_path: str) -> str:
         try:
-            # Verify file exists
             if not os.path.exists(audio_path):
                 return f"Error: Audio file not found at {audio_path}"
-            
-            # Load and transcribe
+
+            # Step 1: Execute diarization
+            diar_pipeline = self._load_diarization_pipeline()
+            NUM_SPEAKERS = 2  # Force 2 speakers for military conversations
+            diarization = diar_pipeline(audio_path, num_speakers=NUM_SPEAKERS)
+
+            # Step 2: Load Whisper model
             model = self._load_whisper_model()
-            result = model.transcribe(audio_path)
-            
-            # Format output for threat analysis
-            transcription = result['text']
-            confidence = result.get('language_probability', 0.0)
-            detected_language = result.get('language', 'unknown')
-            
+
+            # Step 3: Create speaker-labeled text
+            segments = []
+            for turn, _, speaker in diarization.itertracks(yield_label=True):
+                start, end = turn.start, turn.end
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_segment:
+                    # Extract corresponding segment
+                    subprocess.run([
+                        "ffmpeg", "-y", "-i", audio_path,
+                        "-ss", str(start), "-to", str(end),
+                        "-ar", "16000", "-ac", "1", tmp_segment.name
+                    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    result = model.transcribe(tmp_segment.name, language=None)
+                    transcription = result["text"].strip()
+                    if transcription:
+                        segments.append(f"{speaker}: {transcription}")
+
+            full_transcription = "\n".join(segments)
+
             formatted_output = f"""
             AUDIO TRANSCRIPTION REPORT:
             ==========================
-            Detected Language: {detected_language} (confidence: {confidence:.2f})
-            Transcription: {transcription}
+            Speakers detected: {NUM_SPEAKERS}
+            Transcription:
+            {full_transcription}
             ==========================
             """
             return formatted_output.strip()
-            
+
         except Exception as e:
             return f"Error processing audio file: {str(e)}"
 
 
-#####################################################################
+# ============================================================================
+# DOCUMENT ANALYSIS TOOL
+# ============================================================================
+
 class DocumentAnalysisTool(BaseTool):
     name: str = "Document Analysis Tool"
-    description: str = "Analyzes text documents, PDFs, and other written reports for threat intelligence. Input should be the path to a document file."
+    description: str = (
+        "Analyzes text documents, PDFs, and other written reports for threat intelligence. "
+        "Input: document_path (string - path to document file)"
+    )
+    args_schema: Type[BaseModel] = DocumentAnalysisInput
     
     def _run(self, document_path: str) -> str:
         try:
@@ -79,8 +161,6 @@ class DocumentAnalysisTool(BaseTool):
                 content = self._read_pdf_file(document_path)
             else:
                 return f"Unsupported document type: {file_extension}"
-            
-  
             
             formatted_output = f"""
             DOCUMENT ANALYSIS REPORT:
@@ -107,7 +187,7 @@ class DocumentAnalysisTool(BaseTool):
     def _read_pdf_file(self, file_path: str) -> str:
         """Read PDF file using PyPDF2"""
         try:
-            import PyPDF2
+            import PyPDF2 # another lazy import
             with open(file_path, 'rb') as file:
                 reader = PyPDF2.PdfReader(file)
                 text = ""
@@ -119,10 +199,18 @@ class DocumentAnalysisTool(BaseTool):
         except Exception as e:
             return f"Error reading PDF file: {str(e)}"
 
-#####################################################################
+
+# ============================================================================
+# INPUT TYPE DETERMINER TOOL
+# ============================================================================
+
 class InputTypeDeterminerTool(BaseTool):
     name: str = "Input Type Determiner"
-    description: str = "Determines the type of input (text, audio, image, document) and recommends which processing tool to use. Input should be either a file path or direct text content."
+    description: str = (
+        "Determines the type of input (text, audio, image, document) and recommends which processing tool to use. "
+        "Input: input_data (string - file path or direct text content)"
+    )
+    args_schema: Type[BaseModel] = InputTypeDeterminerInput
     
     def _run(self, input_data: str) -> str:
         # Check if it's a file path
@@ -130,7 +218,7 @@ class InputTypeDeterminerTool(BaseTool):
             file_path = input_data
             file_extension = Path(file_path).suffix.lower()
             
-            # Audio formats (temporarily disabled)
+            # Audio formats
             if file_extension in ['.mp3', '.wav', '.m4a', '.flac', '.ogg']:
                 return f"""
                 INPUT TYPE: AUDIO FILE
@@ -148,6 +236,7 @@ class InputTypeDeterminerTool(BaseTool):
                 File: {os.path.basename(file_path)}
                 """
             
+            # Image formats
             elif file_extension in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.gif']:
                 return f"""
                 INPUT TYPE: IMAGE FILE
@@ -157,7 +246,7 @@ class InputTypeDeterminerTool(BaseTool):
                 File: {os.path.basename(file_path)}
                 """
             
-            
+            # Unknown file type
             else:
                 return f"""
                 INPUT TYPE: UNKNOWN FILE

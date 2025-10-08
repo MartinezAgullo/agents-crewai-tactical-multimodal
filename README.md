@@ -63,6 +63,9 @@ This project follows the standard CrewAI scafolding
 ### 🚀 Key Features
 
   * **Multimodal Input Processing**: Handles multiple input types, including images, audio, and text, by using specialized tools and an LLM with native vision capabilities.
+      - The audio is processed using [whisper](https://openai.com/index/whisper/) and [pyannote](https://huggingface.co/pyannote).
+      <!-- The audio has been created with [ElevenLabs](https://elevenlabs.io/app/speech-synthesis/text-to-speech) -->
+
 
   * **MQTT integration**: Uses an [MQTT](https://mqtt.org/) consumer to receive alerts.
 

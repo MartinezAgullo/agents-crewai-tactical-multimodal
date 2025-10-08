@@ -35,7 +35,7 @@ threat_analyst_agent:
     - context: "context text here"
     Do NOT pass objects with "description" and "type" keys. Pass the actual string values directly.
   
-  tools: []
+  # tools: []
   
   verbose: 2
 

@@ -13,16 +13,23 @@ dependencies = [
     "crewai[tools]",
     "openai",
     "python-dotenv",
+
     # Multimodal processing dependencies
-    "openai-whisper", # Audio transcription
-    "Pillow", # Image processing
-    "pytesseract", # OCR text extraction
-    "opencv-python", # Computer vision
-    "PyPDF2", # PDF processing
-    "numpy", # Numerical operations
+    "openai-whisper",         # Audio transcription
+    "pyannote.audio>=3.1.1",  # Speaker diarization (complements whisper)
+    "torch",                  # pyannote neeeds this
+    "torchaudio",             # pyannote neeeds this
+    "Pillow",           # Image processing
+    "pytesseract",      # OCR text extraction
+    "opencv-python",    # Computer vision
+    "PyPDF2",   # PDF processing
+    "numpy",    # Numerical operations
+    
+
     # Geolocation dependencies
-    "geopy", # Geocoding and location services
+    "geopy",    # Geocoding and location services
     "requests", # HTTP requests for IP geolocation
+    
     # UI dependencies
     "gradio",
     
