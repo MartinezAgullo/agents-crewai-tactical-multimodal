@@ -14,13 +14,13 @@ The system operates a specialized crew of AI [agents](https://github.com/Martine
 2.  **Report Generation:** The **Report Generator Agent** synthesizes the analysis into a professional, concise situation report.
 3.  **Tactical Response:** The **Tactical Advisor Agent** suggests a strategic and well-reasoned response to the identified threats.
 
-Design pattern: These agents are connected by a **prompt chaining workflow**. This means that the general task is decomposed into a sequence of steps in which each LLM call processes the output of the precious one. The main goal is to trade off latency for higher accuracy, by making each LLM call an easier task.
+Design pattern: These agents are connected by a **prompt chaining workflow**. This means that the general task is decomposed into a sequence of steps in which each LLM call processes the output of the previous one. The main goal is to trade off latency for higher accuracy, by making each LLM call an easier task.
 
 The final output for each step is saved in markdown format to the `output/` directory.
 
 -----
 ### 📁 Project Structure
-This project follows the standard CrewAI scafolding
+This project follows the standard CrewAI scaffolding
 
 ```
 .
@@ -119,7 +119,7 @@ You can modify the mission input and location in src/main.py to test different s
  - mission_input: Point to text, image or audio file or directly write some mission report.
  - location_input: Provide name or coordinates. If location_input=None, your IP location will be used.
 
-For users who prefer a graphical interface, do:
+For users who prefer a graphical interface, run:
 ```bash
 uv run python gradio_interface.py
 ```
@@ -138,7 +138,7 @@ enable_telemetry: false
 ```
 
 **MQTT**
-If you set enable_MQTT_consumer to true, in a separete terminal you shall execute the command below to prouce messages:
+If you set enable_MQTT_consumer to true, in a separate terminal you shall execute the command below to prouce messages:
 ```bash
 uv run python mqtt/mqtt_producer.py
 ```
@@ -156,7 +156,7 @@ If you set enable_telemetry to true, read the **OpenTelemetry Setup** section be
 -----
 
 ### 📚 LLM manager
-The LLM-fallback-manager system performs an acutual API call during its initizalisation. This goes beyond a simple check of envirorment variables.
+The LLM-fallback-manager system performs an actual API call during its initizalisation. This goes beyond a simple check of envirorment variables.
 The system tests each configured model to confirm that it's not only set up correctly but is also functional and responsive.
 
 Example output of the LLM manager:
@@ -266,13 +266,13 @@ current_location = None
 
   * **Note:** The agent is designed to use this tool autonomously as part of its task, so you only need to set the `current_location` variable.
 
-### Audio transcition
+### Audio transcription
 The agent use [pyannote](https://huggingface.co/pyannote) to indentify different speakers (diarization). 
 In order to use it yo neet to:
   * Go to https://huggingface.co/pyannote/segmentation-3.0 → Click "Agree"
   * Go to https://huggingface.co/pyannote/speaker-diarization-3.0 → Click "Agree"
 <figure style="margin: 0;">
-    <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/diarization.png" alt="diarization" style="width: 100%; max-width: 400px; display: block;">
+    <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/diarization.jpg" alt="diarization" style="width: 100%; max-width: 400px; display: block;">
 </figure>
 
 -----
@@ -287,7 +287,7 @@ The telemetry system is completely **optional** and can be toggled on/off via en
 
 #### Option 1: Standalone Binary (Recommended for macOS)
 
-1. [Dowload](https://openobserve.ai/downloads/) the binary 
+1. [Download](https://openobserve.ai/downloads/) the binary 
 ```bash
 cd ~
 mkdir openobserve && cd openobserve
@@ -382,7 +382,7 @@ podman-compose down
 -----
 ### 📺 Gradio interface
 An alternative web-based interface is available via Gradio for users who prefer a graphical interface over the command line.
-It has been incorported via the [TacticalAnalysisInterface](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/gradio_interface.py).
+It has been incorporated via the [TacticalAnalysisInterface](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/gradio_interface.py).
 <figure style="margin: 0;">
     <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/GradioInterface.png" alt="Gradio interface" style="width: 100%; max-width: 400px; display: block;">
 </figure>
@@ -396,7 +396,7 @@ uv run python gradio_interface.py
 
 Note I: Gradio interface provides the same tactical analysis capabilities as main.py but through an interactive web UI. Use either the Gradio interface OR the command-line execution, not both simultaneously.
 
-Note II: Neither MQTT nor OpenObserve have been implemented on gradio yet.
+Note II: Neither MQTT nor OpenObserve have been implemented on the Gradio interface yet.
 
 
 
