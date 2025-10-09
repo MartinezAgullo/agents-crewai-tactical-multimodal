@@ -23,7 +23,7 @@ dependencies = [
     "pytesseract",      # OCR text extraction
     "opencv-python",    # Computer vision
     "PyPDF2",   # PDF processing
-    "numpy",    # Numerical operations
+    "numpy<2",    # Numerical operations
     
 
     # Geolocation dependencies

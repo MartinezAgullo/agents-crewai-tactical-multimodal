@@ -80,23 +80,52 @@ class AudioTranscriptionTool(BaseTool):
             try:
                 from pyannote.audio import Pipeline  # Import only when needed
                 hf_token = os.getenv("HF_TOKEN", None)
+                
+                if not hf_token:
+                    raise ValueError(
+                        "HF_TOKEN not found in environment. "
+                        "Get your token from https://huggingface.co/settings/tokens"
+                    )
+                
+                print(f"Loading pyannote speaker-diarization model...")
                 self.diarization_pipeline = Pipeline.from_pretrained(
                     "pyannote/speaker-diarization-3.1",
                     use_auth_token=hf_token
                 )
-            except ImportError:
+                print("✅ Diarization model loaded successfully")
+
+            except Exception as e:
+                error_msg = str(e)
+                if "gated" in error_msg.lower() or "private" in error_msg.lower():
+                    raise ValueError(
+                        "Error accessing the pyannote model. Authentication failed for pyannote model'."
+                    )
+
                 raise ImportError(
-                    "Pyannote.audio is not installed. Install it with: pip install pyannote.audio"
+                    f"Pyannote.audio dependencies not available: {e}\n"
+                    "This may be due to PyTorch compatibility issues on your system."
                 )
         return self.diarization_pipeline
-
+    
     def _run(self, audio_path: str) -> str:
         try:
             if not os.path.exists(audio_path):
                 return f"Error: Audio file not found at {audio_path}"
 
             # Step 1: Execute diarization
-            diar_pipeline = self._load_diarization_pipeline()
+            try:
+                diar_pipeline = self._load_diarization_pipeline()
+                model = self._load_whisper_model()
+            except (ImportError, RuntimeError, OSError) as e:
+                return (
+                    f"ERROR: Audio transcription dependencies not available\n"
+                    f"Details: {str(e)}\n\n"
+                    f"WORKAROUND: Audio transcription requires:\n"
+                    f"1. Working PyTorch installation\n"
+                    f"2. pyannote.audio\n"
+                    f"3. HuggingFace token (HF_TOKEN in .env)\n\n"
+                )
+            
             NUM_SPEAKERS = 2  # Force 2 speakers for military conversations
             diarization = diar_pipeline(audio_path, num_speakers=NUM_SPEAKERS)
 

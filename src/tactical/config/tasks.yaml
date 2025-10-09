@@ -7,11 +7,11 @@ threat_analysis_task:
 
     1. **Extract Image Metadata (If Applicable)**
        Input provided: {mission_input}
-       - If the input is an image or audio file path:
+       - If the input is an image file path:
          * FIRST use `EXIF Metadata Extractor` to extract all metadata including GPS coordinates
          * If GPS coordinates are found in EXIF, they take PRIORITY over {location_input}
          * Store the GPS coordinates for the next step
-       - If not an image/audio or no GPS data found: proceed to next step with {location_input}
+       - If not an image or no GPS data found: proceed to next step with {location_input}
     
     2. **Establish Geographic Context**
         - Use `Location Context Tool` with the location determined by priority:

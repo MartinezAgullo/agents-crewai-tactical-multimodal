@@ -139,7 +139,8 @@ def run(config):
         print("LLM connectivity test passed!")
     
     # Default mission inputs (can be modified here)
-    mission_input = "inputs/image_inputs/test_image_10_mediterranean_ground.png"
+    #mission_input = "inputs/image_inputs/test_image_10_mediterranean_ground.png"
+    mission_input = "inputs/audio_inputs/radio_conversation.mp3"
     location_input = None
     
     inputs = {

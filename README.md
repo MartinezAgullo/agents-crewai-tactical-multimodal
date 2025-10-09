@@ -71,7 +71,7 @@ This project follows the standard CrewAI scafolding
 
   * **OpenObserve**: Uses [OpenObserve](https://openobserve.ai/) for telemetry monitoring.
 
-  * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. The location can also be retreived from the metadata using [ExifTool](https://exiftool.org/). 
+  * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. The location can also be retreived from the metadata. 
   <!-- Shall use ID3v2: More modern location-information standard -->
 
   * **Robust LLM Fallback System**: A custom `LLMManager` handles a hierarchy of LLMs, ensuring the best-suited model is chosen for each [task](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/tactical/config/tasks.yaml) (e.g., a "reasoning" model for analysis, a "flash" model for quick tasks), with fallback options to ensure reliability.
@@ -246,10 +246,12 @@ The system uses a rule-based classification tool to identify entities as **Frien
 
 ### 🗺️ Geolocation Services
 
-The system's `LocationContextTool` can be used to add geographic context to the mission. Here's how to configure it in `src/main.py`:
+The system's `LocationContextTool` can be used to add geographic context to the mission.
+For images, metadata can be used to determine location using [ExifTool](https://exiftool.org/).
+Here's how to configure it in `src/main.py`:
 
 ```python
-# Option 1: Auto-detect location via IP
+# Option 1: Auto-detect location via image metadata
 current_location = None
 
 # Option 2: Specify a location by name
@@ -257,9 +259,21 @@ current_location = None
 
 # Option 3: Specify coordinates
 # current_location = "40.4168, -3.7038" # Madrid coordinates
+
+# Option 4: Auto-detect location via IP (metadata location fails)
+current_location = None
 ```
 
   * **Note:** The agent is designed to use this tool autonomously as part of its task, so you only need to set the `current_location` variable.
+
+### Audio transcition
+The agent use [pyannote](https://huggingface.co/pyannote) to indentify different speakers (diarization). 
+In order to use it yo neet to:
+  * Go to https://huggingface.co/pyannote/segmentation-3.0 → Click "Agree"
+  * Go to https://huggingface.co/pyannote/speaker-diarization-3.0 → Click "Agree"
+<figure style="margin: 0;">
+    <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/diarization.png" alt="diarization" style="width: 100%; max-width: 400px; display: block;">
+</figure>
 
 -----
 ### 📡 OpenTelemetry Setup
@@ -369,9 +383,9 @@ podman-compose down
 ### 📺 Gradio interface
 An alternative web-based interface is available via Gradio for users who prefer a graphical interface over the command line.
 It has been incorported via the [TacticalAnalysisInterface](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/gradio_interface.py).
-    <figure style="margin: 0;">
-        <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/GradioInterface.png" alt="Gradio interface" style="width: 100%; max-width: 400px; display: block;">
-    </figure>
+<figure style="margin: 0;">
+    <img src="https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/output/GradioInterface.png" alt="Gradio interface" style="width: 100%; max-width: 400px; display: block;">
+</figure>
 
 #### Launch Gradio Interface
 
@@ -388,4 +402,4 @@ Note II: Neither MQTT nor OpenObserve have been implemented on gradio yet.
 
 
 
-<!-- tree -I "__pycache__|agents_crewai_tactical_multimodal.egg-info|__init__.py|inputs|uv.lock|README.md|data|openobserve-ee-v0.15.1-darwin-arm64.tar.gz" -->
+<!-- tree -I "__pycache__|agents_crewai_tactical_multimodal.egg-info|__init__.py|inputs|uv.lock|README.md|data|openobserve-ee-v0.15.1-darwin-arm64.tar.gz|temp_uploads|1-darwin-arm64.tar.gz" -->
