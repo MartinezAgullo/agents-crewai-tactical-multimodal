@@ -195,10 +195,11 @@ class LocationContextTool(BaseTool):
         """Provide strategic context for the location"""
         try:
             context_string = (
-                "              - Assess proximity to major urban centers\n"
-                "              - Consider transportation infrastructure access\n"
-                "              - Evaluate communication coverage in area\n"
-                "              - Check for restricted or sensitive zones nearby"
+                "\n"
+                "            - Assess proximity to major urban centers\n"
+                "            - Consider transportation infrastructure access\n"
+                "            - Evaluate communication coverage in area\n"
+                "            - Check for restricted or sensitive zones nearby"
             )
         
             return context_string

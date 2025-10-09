@@ -4,13 +4,24 @@ threat_analysis_task:
     Identify and classify ALL detected entities using official classification criteria.
     
     EXECUTION SEQUENCE:
+
+    1. **Extract Image Metadata (If Applicable)**
+       Input provided: {mission_input}
+       - If the input is an image or audio file path:
+         * FIRST use `EXIF Metadata Extractor` to extract all metadata including GPS coordinates
+         * If GPS coordinates are found in EXIF, they take PRIORITY over {location_input}
+         * Store the GPS coordinates for the next step
+       - If not an image/audio or no GPS data found: proceed to next step with {location_input}
     
-    1. **Establish Geographic Context**
-       - Use `Location Context Tool` with input: {location_input}
+    2. **Establish Geographic Context**
+        - Use `Location Context Tool` with the location determined by priority:
+         * PRIORITY 1: User-provided {location_input}
+         * PRIORITY 2: GPS coordinates from image EXIF (if available)
+         * PRIORITY 3: IP-based detection (if both above are unavailable)
        - Record: coordinates, terrain type, strategic significance, nearby infrastructure
        - Note: This provides the tactical backdrop for all subsequent analysis
     
-    2. **Process Intelligence Input**
+    3. **Process Intelligence Input**
        Input provided: {mission_input}.
        - If the provided input is plain text, proceed directly to analysis.
        - If the input is a file path, use `Input Type Determiner` to determine which tool to apply on the input.
@@ -24,7 +35,7 @@ threat_analysis_task:
        
       GOAL: Extract ALL observable information without adding interpretation
     
-    3. **Detect and Catalog Entities**
+    4. **Detect and Catalog Entities**
        Systematically identify:
        - All human personnel (groups or individuals)
        - All vehicles (military, civilian, unknown)
@@ -37,7 +48,7 @@ threat_analysis_task:
        - Location within the area of operations
        - Any visible insignia, markings, or identifying features
     
-    4. **Classify Entities Using Official Criteria**
+    5. **Classify Entities Using Official Criteria**
        **CRITICAL**: For EVERY entity detected, use the `Classification Reference Tool`.
        
        Provide the tool with:
@@ -54,7 +65,7 @@ threat_analysis_task:
        
        **NEVER GUESS**. If classification is uncertain, mark as Unknown and explain why.
     
-    5. **Assess Tactical Factors (When Observable)**
+    6. **Assess Tactical Factors (When Observable)**
        Include ONLY if clearly visible in source intelligence:
        - Posture/stance (defensive, aggressive, neutral, fleeing)
        - Fields of fire / angles of vision
@@ -70,7 +81,7 @@ threat_analysis_task:
        - Skill level or training
        - Anything not directly observable
     
-    6. **Generate Intelligence Summary**
+    7. **Generate Intelligence Summary**
        Compile findings into structured threat assessment (format specified in expected_output)
   
   agent: threat_analyst_agent

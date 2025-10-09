@@ -16,6 +16,8 @@ from src.tactical.tools.multimodal_tools import (
 )
 from src.tactical.tools.location_tools import LocationContextTool
 from src.tactical.tools.classification_tool import ClassificationReferenceTool
+from src.tactical.tools.exif_tools import ExifMetadataExtractor, GPSFromExifTool
+
 
 
 # Load environment variables from .env file
@@ -65,6 +67,10 @@ class TacticalCrew:
         return [
             # Classification system
             ClassificationReferenceTool(),
+
+            # EXIF metadata extraction
+            ExifMetadataExtractor(),
+            GPSFromExifTool(),
             
             # Multimodal processing
             InputTypeDeterminerTool(),

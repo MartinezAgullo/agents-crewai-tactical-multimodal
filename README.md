@@ -71,7 +71,8 @@ This project follows the standard CrewAI scafolding
 
   * **OpenObserve**: Uses [OpenObserve](https://openobserve.ai/) for telemetry monitoring.
 
-  * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. 
+  * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. The location can also be retreived from the metadata using [ExifTool](https://exiftool.org/). 
+  <!-- Shall use ID3v2: More modern location-information standard -->
 
   * **Robust LLM Fallback System**: A custom `LLMManager` handles a hierarchy of LLMs, ensuring the best-suited model is chosen for each [task](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/tactical/config/tasks.yaml) (e.g., a "reasoning" model for analysis, a "flash" model for quick tasks), with fallback options to ensure reliability.
 

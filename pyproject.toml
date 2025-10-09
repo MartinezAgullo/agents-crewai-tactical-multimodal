@@ -30,6 +30,9 @@ dependencies = [
     "geopy",    # Geocoding and location services
     "requests", # HTTP requests for IP geolocation
     
+    # Metadata extraction
+    "PyExifTool>=0.5.6",
+
     # UI dependencies
     "gradio",
     
