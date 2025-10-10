@@ -23,38 +23,42 @@ The final output for each step is saved in markdown format to the `output/` dire
 This project follows the standard CrewAI scaffolding
 
 ```
-.
+agents-crewai-tactical-multimodal/
+├── checkpoints
 ├── gradio_interface.py
+├── inputs
+│   ├── audio_inputs
+│   ├── image_inputs
+│   └── text_inputs
 ├── mqtt
 │   ├── config
-│   │   └── mosquitto.conf
 │   ├── log
-│   │   └── mosquitto.log
 │   ├── mqtt_client.py
 │   ├── mqtt_consumer_agent.py
 │   └── mqtt_producer.py
 ├── openobserve
 │   └── openobserve
 ├── output
-│   ├── GradioInterface.png
 │   ├── report_generation_task.md
 │   ├── tactical_response_task.md
 │   └── threat_analysis_task.md
 ├── pyproject.toml
 └── src
     ├── crew.py
-    ├── llm_manager.py
     ├── main.py
     └── tactical
         ├── config
         │   ├── agents.yaml
         │   ├── classifications.yaml
+        │   ├── config_loader.py
         │   ├── execution_config.yaml
         │   └── tasks.yaml
         ├── references
         │   └── insignia
         └── tools
             ├── classification_tool.py
+            ├── exif_tools.py
+            ├── llm_manager.py
             ├── location_tools.py
             └── multimodal_tools.py
 ```
@@ -71,7 +75,7 @@ This project follows the standard CrewAI scaffolding
 
   * **OpenObserve**: Uses [OpenObserve](https://openobserve.ai/) for telemetry monitoring.
 
-  * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. The location can also be retreived from the metadata. 
+  * **Dynamic Geolocation**: Automatically retrieves the current location via IP address or accepts a specific location from the user to provide real-world tactical context. The location can also be retrieved from the metadata. 
   <!-- Shall use ID3v2: More modern location-information standard -->
 
   * **Robust LLM Fallback System**: A custom `LLMManager` handles a hierarchy of LLMs, ensuring the best-suited model is chosen for each [task](https://github.com/MartinezAgullo/agents-crewai-tactical-multimodal/blob/main/src/tactical/config/tasks.yaml) (e.g., a "reasoning" model for analysis, a "flash" model for quick tasks), with fallback options to ensure reliability.
@@ -130,7 +134,7 @@ Edit the configuration file `execution_config.yaml` in order to disable or enabl
 ```bash
 vim src/tactical/config/execution_config.yaml
 ```
-From here you can control wether or not to use the enhance LLM manager, the consumtion of MQTT messages and the open telemetry monitoring. 
+From here you can control whether or not to use the enhance LLM manager, the consumtion of MQTT messages and the open telemetry monitoring. 
 ```bash
 execute_LLM_manager: false
 enable_MQTT_consumer: false
@@ -138,7 +142,7 @@ enable_telemetry: false
 ```
 
 **MQTT**
-If you set enable_MQTT_consumer to true, in a separate terminal you shall execute the command below to prouce messages:
+If you set enable_MQTT_consumer to true, in a separate terminal you shall execute the command below to produce messages:
 ```bash
 uv run python mqtt/mqtt_producer.py
 ```
@@ -268,7 +272,7 @@ current_location = None
 
 ### Audio transcription
 The agent use [pyannote](https://huggingface.co/pyannote) to indentify different speakers (diarization). 
-In order to use it yo neet to:
+In order to use it you neet to:
   * Go to https://huggingface.co/pyannote/segmentation-3.0 → Click "Agree"
   * Go to https://huggingface.co/pyannote/speaker-diarization-3.0 → Click "Agree"
 <figure style="margin: 0;">
@@ -402,4 +406,4 @@ Note II: Neither MQTT nor OpenObserve have been implemented on the Gradio interf
 
 
 
-<!-- tree -I "__pycache__|agents_crewai_tactical_multimodal.egg-info|__init__.py|inputs|uv.lock|README.md|data|openobserve-ee-v0.15.1-darwin-arm64.tar.gz|temp_uploads|1-darwin-arm64.tar.gz" -->
+<!-- tree -I "__pycache__|agents_crewai_tactical_multimodal.egg-info|__init__.py|*png|*.mp3|*.m4a|*.txt|uv.lock|README.md|data|openobserve-ee-v0.15.1-darwin-arm64.tar.gz|temp_uploads|1-darwin-arm64.tar.gz|*.jpg|*.log|*.conf" -->

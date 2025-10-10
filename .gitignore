@@ -24,7 +24,11 @@ __pycache__/
 # Ignore sensitive environment variables
 .env
 # Ignore large or temporary input/upload directories
-inputs/
+inputs/*/*.m4a
+inputs/*/*.mp4
+inputs/*/*.png
+inputs/*/*.txt
+
 temp_uploads/
 uv.lock
 mqtt/log/*.log
