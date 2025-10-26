@@ -5,7 +5,7 @@ execution:
   # LLM Manager - Enhanced multi-provider LLM fallback system
   # When enabled: Tests and selects best available LLM from configured providers
   # When disabled: Uses basic LLM configuration
-  execute_LLM_manager: false
+  execute_LLM_manager: true
   
   # MQTT Consumer - Receives and processes real-time tactical alerts
   # Requires: Mosquitto broker running on localhost:1883

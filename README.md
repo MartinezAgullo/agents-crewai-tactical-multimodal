@@ -14,7 +14,12 @@ The system operates a specialized crew of AI [agents](https://github.com/Martine
 2.  **Report Generation:** The **Report Generator Agent** synthesizes the analysis into a professional, concise situation report.
 3.  **Tactical Response:** The **Tactical Advisor Agent** suggests a strategic and well-reasoned response to the identified threats.
 
+
 Design pattern: These agents are connected by a **prompt chaining workflow**. This means that the general task is decomposed into a sequence of steps in which each LLM call processes the output of the previous one. The main goal is to trade off latency for higher accuracy, by making each LLM call an easier task.
+
+```
+Threat Analyst → Report Generator → Tactical Advisor
+```
 
 The final output for each step is saved in markdown format to the `output/` directory.
 
